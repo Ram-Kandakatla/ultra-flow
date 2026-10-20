@@ -1,0 +1,363 @@
+<title>Flow Grid</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flow">
+<meta name="theme-color" content="#f7f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1714" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Theme borrowed from GPA-calc: warm paper / toasted dark neutrals, Space Grotesk display + IBM Plex Sans body, 8/14px radii.
+   Palette: paper --bg, ink --tx, muted ink --txm, accent --orange (logo, points, board glow), interactive --blue. Glow shadow only on the board.
+   Layout: home screen (shape + level) overlays the game. Game: phone = one column; wide screens = board left, controls in a side column.
+   Pipe colors --p0..--p12 are per theme, each >=4.3:1 against the board (checked), dots also carry letters so color is never the only cue. */
+:root{
+  --bg:#f7f4ef;--surface:#fffdfa;--s2:#ece7df;--s3:#e2ddd3;--border:rgba(60,40,20,.08);--bmed:rgba(60,40,20,.14);
+  --tx:#1c1c1a;--txm:#6a6a66;--green:#2a7a3b;--blue:#1a60b0;--bbg:#ddeaf9;--orange:#c05c00;--glow:rgba(255,158,68,.22);--amb:rgba(255,158,68,.3);
+  --p0:#c62828;--p1:#1a60b0;--p2:#2a7a3b;--p3:#9a7300;--p4:#c05c00;--p5:#00838f;--p6:#b0247a;--p7:#6b46c1;--p8:#557a00;--p9:#8a5a34;--p10:#d6336c;--p11:#4b5563;--p12:#2b2722;
+  --r:8px;--rl:14px;--col:600px;
+  --fs-xs:11px;--fs-sm:13px;--fs-base:15px;--fs-md:17px;--fs-lg:20px;--fs-num:22px; /* type scale: labels, UI, body, dialog title, brand, stat numbers */
+  --t-fast:120ms;--t-med:320ms;--ease-out:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.3,1.6,.5,1); /* motion tokens */
+  --font-body:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-display:'Space Grotesk',var(--font-body);
+  padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1b1714;--surface:#242019;--s2:#2d2822;--s3:#37312a;--border:rgba(255,235,215,.08);--bmed:rgba(255,235,215,.14);
+  --tx:#f0efe9;--txm:#9a9a94;--green:#4ec668;--blue:#5fa8f5;--bbg:#0d2238;--orange:#f5a742;--glow:rgba(255,140,60,.22);--amb:rgba(255,140,60,.18);
+  --p0:#ff6b6b;--p1:#5fa8f5;--p2:#4ec668;--p3:#f5d142;--p4:#f5a742;--p5:#3fd0e0;--p6:#f062c0;--p7:#a98bff;--p8:#b5dc5a;--p9:#c9935f;--p10:#ffadc6;--p11:#9aa3ad;--p12:#f4f1ea;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1b1714;--surface:#242019;--s2:#2d2822;--s3:#37312a;--border:rgba(255,235,215,.08);--bmed:rgba(255,235,215,.14);
+  --tx:#f0efe9;--txm:#9a9a94;--green:#4ec668;--blue:#5fa8f5;--bbg:#0d2238;--orange:#f5a742;--glow:rgba(255,140,60,.22);--amb:rgba(255,140,60,.18);
+  --p0:#ff6b6b;--p1:#5fa8f5;--p2:#4ec668;--p3:#f5d142;--p4:#f5a742;--p5:#3fd0e0;--p6:#f062c0;--p7:#a98bff;--p8:#b5dc5a;--p9:#c9935f;--p10:#ffadc6;--p11:#9aa3ad;--p12:#f4f1ea;
+  color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{margin:0;background:var(--bg);color:var(--tx);font:var(--fs-base)/1.55 var(--font-body);-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-inline:16px;padding-block:8px 12px;
+  touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:background .2s,color .2s}
+@media (prefers-reduced-motion:reduce){*,::backdrop{animation-duration:.001ms!important;animation-delay:0s!important;transition-duration:.001ms!important}}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+[hidden]{display:none!important}
+#game{display:contents} /* wrapper only for inert while home is up; its children stay in body's layout */
+header,.card,#wrap,.bar,footer{width:100%;max-width:var(--col)} /* one shared column edge, board included */
+header,.bar{display:flex;align-items:center;gap:8px}
+.brand{display:flex;align-items:center;gap:8px;margin:0 auto 0 0;font:700 var(--fs-lg)/1.15 var(--font-display);letter-spacing:-.4px}
+.brand svg{color:var(--orange);flex-shrink:0}
+.card{background:var(--surface);border:.5px solid var(--bmed);border-radius:var(--rl);transition:background .2s}
+#hud{align-items:center;flex-wrap:wrap;row-gap:10px;padding:10px 14px}
+.stats{display:flex;gap:18px;font-variant-numeric:tabular-nums}
+.stats div{display:grid;gap:2px}
+.stats b{font-size:var(--fs-xs);font-weight:500;color:var(--txm);text-transform:uppercase;letter-spacing:.04em}
+.stats span{font:700 var(--fs-num)/1 var(--font-display);letter-spacing:-.5px;transform-origin:left center}
+.bump{animation:bump var(--t-med) var(--spring)}
+@keyframes bump{40%{transform:scale(1.2)}}
+#pts,#de{color:var(--orange)} /* reward color; 22px bold is large text, so 3:1 is the bar */
+#hintBtn{margin-left:auto}
+#wrap{flex:1;min-height:0;max-height:100vw;width:100%;display:grid;place-items:center} /* no overflow clip: the win pop grows past it.
+  max-height: on tall phones the whole column centers instead of the board floating in a stretched gap */
+canvas{touch-action:none;border-radius:var(--rl);filter:drop-shadow(0 10px 12px var(--glow)) drop-shadow(0 0 36px var(--amb))} /* lift + ambient halo, both follow the board's shape */
+.pop{animation:pop 420ms var(--spring)} /* keep in sync with MS.lift */
+@keyframes pop{45%{transform:scale(var(--pop,1.2));filter:drop-shadow(0 22px 22px var(--glow)) drop-shadow(0 0 36px var(--amb))}} /* --pop set per layout in resize() */
+#st{flex:1;min-width:0;font-size:var(--fs-sm);line-height:1.35;color:var(--txm);font-variant-numeric:tabular-nums;transition:color var(--t-med)}
+#st.win{color:var(--green);font-weight:600}
+footer{font-size:var(--fs-sm);color:var(--txm);font-variant-numeric:tabular-nums}
+.btn{min-height:44px;padding:0 16px;font:500 var(--fs-sm) var(--font-body);border-radius:var(--r);cursor:pointer;border:.5px solid var(--bmed); /* 44px tap target at every width */
+  background:var(--s2);color:var(--tx);white-space:nowrap;transition:background var(--t-fast),opacity var(--t-fast),transform var(--t-fast) var(--ease-out)}
+.btn:hover{background:var(--s3)}
+.btn:active,.level:active,.shape:active{transform:scale(.96)}
+.btn-primary,.btn-primary:hover{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.btn-primary:hover{opacity:.82}
+.btn-ghost{background:none;border-color:transparent;color:var(--txm)}
+.btn-ghost:hover{background:var(--s2);color:var(--tx)}
+.btn-sample{background:var(--bbg);color:var(--blue);border-color:var(--blue);font-weight:600}
+.btn-sample:hover{background:var(--blue);color:var(--surface)}
+.theme-toggle{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 4px;background:none;border:0;color:var(--txm);font:var(--fs-sm) var(--font-body);cursor:pointer}
+.toggle-track{width:30px;height:17px;background:var(--s3);border-radius:9px;position:relative;transition:background .2s}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:13px;height:13px;background:var(--txm);border-radius:50%;transition:transform .2s,background .2s}
+.theme-toggle[aria-checked="true"] .toggle-track{background:var(--blue)}
+.theme-toggle[aria-checked="true"] .toggle-thumb{transform:translateX(13px);background:#fff}
+dialog{margin:auto;width:min(360px,calc(100% - 32px));border:.5px solid var(--bmed);border-radius:var(--rl);background:var(--surface);color:var(--tx);
+  padding:1.5rem 1.5rem 1.25rem;box-shadow:0 24px 48px -24px rgba(0,0,0,.45)}
+dialog::backdrop{background:rgba(20,14,8,.45)}
+dialog[open]{animation:rise var(--t-med) var(--ease-out)}           /* popup rises in; closing stays instant (exit faster than enter) */
+dialog[open]::backdrop{animation:fade .32s cubic-bezier(.2,.8,.2,1)} /* literal: ::backdrop can't read custom properties in older Safari */
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.97)}}
+@keyframes fade{from{opacity:0}}
+form{display:grid;gap:14px}
+h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
+.rec-line{margin:0;font-size:var(--fs-sm);color:var(--txm)}
+.rec-line.new{color:var(--green);font-weight:600}
+.row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+/* Home: pick a shape, then tap a level to start. Shapes are drawn from the same masks the generator uses. */
+.home{position:fixed;inset:0;z-index:5;overflow-y:auto;touch-action:pan-y;background:var(--bg);display:flex;flex-direction:column;align-items:center;gap:20px;
+  padding-inline:16px;padding-block:calc(env(safe-area-inset-top,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 24px)}
+.home>*{width:100%;max-width:880px}
+.home-body{display:grid;gap:24px}
+.eyebrow{font:600 var(--fs-xs)/1.2 var(--font-body);text-transform:uppercase;letter-spacing:.06em;color:var(--txm);margin:0 0 10px}
+.shapes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.shape{display:grid;justify-items:center;gap:8px;padding:12px 6px 10px;background:var(--surface);border:.5px solid var(--bmed);border-radius:var(--rl);
+  color:var(--txm);font:500 var(--fs-sm) var(--font-body);cursor:pointer;transition:transform var(--t-fast) var(--ease-out),color var(--t-fast)}
+.shape svg{width:100%;max-width:60px;aspect-ratio:1;fill:var(--s3);transition:fill var(--t-med)}
+.shape[aria-pressed="true"]{color:var(--tx);border-color:var(--tx);box-shadow:inset 0 0 0 1px var(--tx)}
+.shape[aria-pressed="true"] svg{fill:var(--orange)}
+.levels{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.level{width:100%;min-height:60px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:10px 16px;text-align:left;
+  background:var(--surface);border:.5px solid var(--bmed);border-radius:var(--rl);color:var(--tx);font:inherit;cursor:pointer;transition:background var(--t-fast),transform var(--t-fast) var(--ease-out)}
+.level:hover{background:var(--s2)}
+.level b{font:700 var(--fs-lg)/1 var(--font-display);letter-spacing:-.3px}
+.level .sz,.level .rec{font-size:var(--fs-sm);color:var(--txm);font-variant-numeric:tabular-nums}
+.level .rec{text-align:right;line-height:1.35}
+.flows{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}.flows i{width:6px;height:6px;border-radius:50%} /* the exact colors this level's board uses */
+.pts-line{margin:12px 0 0;font-size:var(--fs-sm);color:var(--txm)}
+@media (min-width:760px){
+  .home{padding-block:calc(env(safe-area-inset-top,0px) + 24px) 40px;gap:32px}
+  .home-body{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:start}
+  .shapes{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .shape{padding:20px 12px 16px}.shape svg{max-width:112px}
+}
+/* Wide screens (tablet/phone landscape, desktop): the board takes the left, controls stack in a side column.
+   Board and brand share a top edge at every size. */
+@media (min-width:700px) and (min-aspect-ratio:5/4){
+  body{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,340px);grid-template-rows:auto auto auto auto 1fr;
+    column-gap:clamp(24px,4vw,56px);align-items:start;padding-inline:clamp(16px,4vw,48px);padding-block:clamp(12px,4vh,40px)}
+  #wrap{grid-column:1;grid-row:1/-1;height:100%;max-width:none;max-height:none;place-items:start center}
+  header,.card,.bar,footer{grid-column:2;max-width:none}
+}
+</style>
+<section id="home" class="home" aria-label="Choose a board">
+  <header>
+    <h1 class="brand"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v7a5 5 0 0 0 5 5h7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><circle cx="6" cy="6" r="4" fill="currentColor"/><circle cx="18" cy="18" r="4" fill="currentColor"/></svg>Flow</h1>
+    <button class="theme-toggle" role="switch" aria-checked="false">Dark mode<span class="toggle-track"><span class="toggle-thumb"></span></span></button>
+  </header>
+  <div class="home-body">
+    <div><h2 class="eyebrow">Shape</h2><div class="shapes" id="shapes"></div></div>
+    <div><h2 class="eyebrow">Level</h2><ul class="levels" id="levels"></ul><p class="pts-line" id="ptsLine"></p></div>
+  </div>
+</section>
+<div id="game">
+  <header>
+    <h1 class="brand"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v7a5 5 0 0 0 5 5h7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><circle cx="6" cy="6" r="4" fill="currentColor"/><circle cx="18" cy="18" r="4" fill="currentColor"/></svg>Flow</h1>
+    <button class="theme-toggle" role="switch" aria-checked="false">Dark mode<span class="toggle-track"><span class="toggle-thumb"></span></span></button>
+  </header>
+  <section id="hud" class="card stats" aria-label="Game stats"><div><b>Time</b><span id="tm"></span></div><div><b>Score</b><span id="sc"></span></div><div><b>Points</b><span id="pts"></span></div><button class="btn btn-sample" id="hintBtn">Hint −10</button></section>
+  <main id="wrap"><canvas id="cv" aria-label="Flow puzzle board"></canvas></main>
+  <div class="bar"><span id="st" aria-live="polite"></span><button class="btn btn-ghost" id="solBtn">Solution</button><button class="btn btn-primary" id="doneBtn">Done</button></div>
+  <footer id="best"></footer>
+</div>
+<dialog id="dlg"><form method="dialog">
+  <h2 id="dh"></h2>
+  <div class="stats" id="dsum"><div><b>Time</b><span id="dt"></span></div><div><b>Score</b><span id="ds"></span></div><div><b>Points</b><span id="de"></span></div></div>
+  <p class="rec-line" id="rec"></p>
+  <div class="row"><button class="btn btn-ghost" id="keepBtn" value=""></button><button class="btn" value="home">Home</button><button class="btn btn-primary" id="goBtn" value="go" autofocus></button></div>
+</form></dialog>
+<script>
+const LEVELS=[['Easy',5],['Medium',7],['Hard',9],['Expert',11],['Godlike',13]],
+  // Board shapes on an odd n x n grid; y,x are offsets from the center c. Each one was checked to generate at every level.
+  // Diamonds and hearts were dropped: their checkerboard imbalance makes small sizes impossible to fill with pipes.
+  SHAPES={Square:()=>true, Circle:(n,y,x,c)=>y*y+x*x<=(c+.5)**2,
+    Ring:(n,y,x)=>{const h=(n-3)/4|0;return Math.abs(y)>h||Math.abs(x)>h}, Plus:(n,y,x)=>{const h=(n+1)/6|0;return Math.abs(y)<=h||Math.abs(x)<=h}},
+  maskOf=(sh,n)=>{const c=(n-1)/2;return [...Array(n*n)].map((_,i)=>SHAPES[sh](n,(i/n|0)-c,i%n-c,c))},
+  PALETTE=13, flows=(N,n)=>Math.min(PALETTE,Math.max(3,Math.round(N/n))), // pipe count for a board of N cells
+  root=document.documentElement,
+  $=id=>document.getElementById(id), cv=$('cv'), x=cv.getContext('2d'), tryDo=f=>{try{return f()}catch{}};
+let shape,n,M,N,cells,dot,sol,paths,cur=-1,won,sec,hints,earned,scored,total,ptr,newRec,pick,wasDone=[],fx=[],raf=0;
+const key=()=>shape+'-'+n, levelName=z=>LEVELS.find(l=>l[1]===z)[0];
+// Motion: one set of timing tokens (ms) for every canvas effect; all of it is skipped under Reduce Motion.
+const RM=matchMedia('(prefers-reduced-motion: reduce)'), MS={stagger:35,wave:28,pop:320,ring:450,spark:600,fade:400,lift:420}; // lift = .pop board CSS
+function play(k,c,dur,delay=0){if(RM.matches)return;fx.push({k,c,t0:performance.now()+delay,dur});raf||=requestAnimationFrame(loop)}
+function pulse(el,cls){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls)} // restart a one-shot CSS animation
+function loop(){raf=0;draw();if(fx.length)raf=requestAnimationFrame(loop)}
+const HINT=10, fmt=s=>`${s/60|0}:${String(s%60).padStart(2,'0')}`,
+  connVal=()=>{const P=2*N;return Math.round(N*10*P/(P+sec)/sol.length)}; // per connection: bigger board = higher base; halves at par (2s per cell)
+
+// Stats (points, solves and records per shape+level): cookie as asked, mirrored to localStorage because Safari blocks cookies
+// inside embedded frames and caps script-set cookies at 7 days (re-saved on every launch to keep it alive).
+let stats=tryDo(()=>JSON.parse(tryDo(()=>decodeURIComponent(document.cookie.match(/(?:^|; )flowStats=([^;]*)/)[1]))||localStorage.flowStats))||{};
+stats.points??=30; // starter points so a first hint is possible
+stats.best??={};stats.solved??={}; // keyed "Shape-n": fastest solve in seconds, solve count
+for(const z of [5,9,11]){stats.solved['Square-'+z]??=stats[z];stats.best['Square-'+z]??=stats.best[z]} // carry over square-only counts from before shapes
+function save(){const v=JSON.stringify(stats);
+  tryDo(()=>document.cookie=`flowStats=${encodeURIComponent(v)};max-age=31536000;path=/;SameSite=Lax`);tryDo(()=>localStorage.flowStats=v)}
+
+// Puzzle for any board shape: grow one random path over the board (extend into free neighbors, otherwise backbite),
+// jumping to a fresh cell when stuck (that jump becomes a cut). Mix with backbite moves, then cut into pipes of 3+ cells.
+// A full-fill solution always exists by construction. ponytail: solutions aren't unique; any full fill wins.
+function gen(n,M){
+  const nb=i=>[i-n,i+n,i%n?i-1:-1,(i+1)%n?i+1:-1].filter(j=>j>=0&&j<n*n&&M[j]), adj=(a,b)=>nb(a).includes(b),
+    cells=M.flatMap((m,i)=>m?[i]:[]), N=cells.length, k=flows(N,n),
+    bite=p=>{const o=nb(p.at(-1)).filter(j=>j!==p.at(-2));if(!o.length)return p;const i=p.indexOf(o[Math.random()*o.length|0]);return p.slice(0,i+1).concat(p.slice(i+1).reverse())};
+  for(;;){
+    let p=[cells[Math.random()*N|0]],seen=new Set(p),idle=0;
+    while(p.length<N){
+      if(Math.random()<.5)p.reverse();
+      const o=nb(p.at(-1)).filter(j=>j!==p.at(-2)),w=o[Math.random()*o.length|0];
+      if(w!==undefined&&!seen.has(w)){p.push(w);seen.add(w);idle=0;continue}
+      if(w!==undefined){const i=p.indexOf(w);p=p.slice(0,i+1).concat(p.slice(i+1).reverse())}
+      if(++idle>N*N){const free=cells.filter(j=>!seen.has(j)),deg=j=>nb(j).filter(q=>!seen.has(q)).length;
+        const f=free.sort((a,b)=>deg(a)-deg(b))[0];p.push(f);seen.add(f);idle=0} // stuck: jump (forced cut)
+    }
+    for(let t=0;t<N*30;t++){if(Math.random()<.5)p.reverse();p=bite(p)}
+    const segs=[[p[0]]];for(let i=1;i<N;i++)adj(p[i-1],p[i])?segs.at(-1).push(p[i]):segs.push([p[i]]);
+    if(segs.length>k||segs.some(s=>s.length<3))continue;
+    for(let r=0;r<20;r++){ // extra cuts until there are k pipes; no pipe may have its two dots side by side
+      const pipes=segs.map(s=>[...s]);
+      while(pipes.length<k){const big=pipes.filter(s=>s.length>=6);if(!big.length)break;
+        const s=big[Math.random()*big.length|0],c=3+(Math.random()*(s.length-5)|0);pipes.splice(pipes.indexOf(s),1,s.slice(0,c),s.slice(c))}
+      if(pipes.length===k&&pipes.every(s=>!adj(s[0],s.at(-1))))return pipes;
+    }
+  }
+}
+
+function newGame(sh,z){
+  shape=sh;n=z;M=maskOf(sh,n);cells=M.flatMap((m,i)=>m?[i]:[]);N=cells.length;sol=gen(n,M);
+  dot=Array(n*n).fill(-1);sol.forEach((s,c)=>dot[s[0]]=dot[s.at(-1)]=c);
+  paths=sol.map(()=>[]);won=0;cur=-1;sec=0;earned=0;newRec=false;hints=new Set();scored=new Set();total=0;stats.last=[sh,z];save();
+  wasDone=[];fx=[];delete $('sc').dataset.v;play('spawn',null,MS.pop+MS.stagger*sol.length);resize(); // fx reset: old effects point at old colors
+}
+
+function resize(){
+  const w=$('wrap'),s=Math.floor(Math.min(w.clientWidth,w.clientHeight)),d=devicePixelRatio||1;
+  cv.style.width=cv.style.height=s+'px';cv.width=cv.height=Math.round(s*d);draw();check();
+  // Win pop: 1.2x in the wide layout; in the one-column layout up to 1.12x, capped so the spring's ~11% overshoot stays on screen.
+  cv.style.setProperty('--pop',WIDE.matches?1.2:Math.min(1.12,1+(innerWidth/s-1)/1.11).toFixed(3));
+}
+const WIDE=matchMedia('(min-width:700px) and (min-aspect-ratio:5/4)'); // same query as the wide-layout CSS
+
+function draw(){
+  const s=cv.width/n, X=i=>(i%n+.5)*s, Y=i=>((i/n|0)+.5)*s, R=i=>[i%n*s,(i/n|0)*s,s,s],
+    cs=getComputedStyle(root), v=k=>cs.getPropertyValue(k).trim(), C=sol.map((g,c)=>v('--p'+c)), // colors follow the theme
+    now=performance.now(), el=(k,c)=>{const f=fx.find(f=>f.k===k&&(c==null||f.c===c));return f?now-f.t0:1e9}, // ms into an effect, huge = finished
+    ease=k=>1-(1-Math.min(1,Math.max(0,k)))**3; // ease-out: things arrive and settle
+  fx=fx.filter(f=>now-f.t0<f.dur);
+  x.clearRect(0,0,cv.width,cv.height);
+  x.fillStyle=v('--surface');for(const i of cells)x.fillRect(...R(i)); // the board, in its shape
+  for(const c of hints)sol[c].forEach((i,j,g)=>{x.globalAlpha=(.42-.34*j/(g.length-1))*ease(el('hint',c)/MS.fade);x.fillStyle=C[c];x.fillRect(...R(i))});
+  x.globalAlpha=1; // hint = faint trail fading away from the starting dot, no pipe
+  paths.forEach((p,c)=>{x.fillStyle=C[c]+'38';for(const i of p)x.fillRect(...R(i))});
+  paths.forEach((p,c)=>p.forEach(i=>{const e=(el('win')-(i%n+(i/n|0))*MS.wave)/MS.pop; // win: diagonal wave of color
+    if(e>0&&e<1){x.globalAlpha=.55*Math.sin(Math.PI*e);x.fillStyle=C[c];x.fillRect(...R(i))}}));
+  x.globalAlpha=1;x.strokeStyle=v('--s3');x.lineWidth=Math.max(1,s/40);
+  for(const i of cells)x.strokeRect(...R(i)); // grid lines, which also outline the shape
+  x.lineCap=x.lineJoin='round';x.lineWidth=s*.32;
+  paths.forEach((p,c)=>{x.strokeStyle=C[c];x.beginPath();p.forEach((i,j)=>x[j?'lineTo':'moveTo'](X(i),Y(i)));x.stroke()});
+  x.strokeStyle='#fff';x.globalAlpha=.13; // stacked faint strokes get lighter toward the center: pipes read as rounded tubes
+  for(const w of [.22,.12]){x.lineWidth=s*w;paths.forEach(p=>{if(p.length<2)return;x.beginPath();p.forEach((i,j)=>x[j?'lineTo':'moveTo'](X(i),Y(i)));x.stroke()})}
+  x.globalAlpha=1;
+  if(cur>=0&&ptr){x.globalAlpha=.2;x.fillStyle=C[cur];x.beginPath();x.arc(ptr[0],ptr[1],s*.9,0,7);x.fill();x.globalAlpha=1} // under-finger halo
+  x.font=`600 ${s*.36}px ${v('--font-display')}`;x.textAlign='center';x.textBaseline='middle';
+  dot.forEach((c,i)=>{if(c<0)return;const k=(el('spawn')-c*MS.stagger)/MS.pop, // new puzzle: dots pop in, staggered by color
+      r=s*.36*(k>=1?1:k<=0?0:1+2.70158*(k-1)**3+1.70158*(k-1)**2);
+    if(r<=0)return;x.fillStyle=C[c];x.beginPath();x.arc(X(i),Y(i),r,0,7);x.fill();
+    const g=x.createLinearGradient(0,Y(i)-r,0,Y(i)+r);g.addColorStop(0,'#fff5');g.addColorStop(.45,'#fff0');g.addColorStop(1,'#0002');
+    x.fillStyle=g;x.fill(); // convex shading over the color: lit top, shaded bottom, letter area left clean
+    if(k>=.7){x.fillStyle=v('--surface');x.fillText(String.fromCharCode(65+c),X(i),Y(i)+s*.02)}}); // letter = non-color cue
+  for(const f of fx)if(f.k==='ring'){const p=(now-f.t0)/f.dur; // connection: ripple out of both dots
+    x.globalAlpha=.7*(1-p);x.strokeStyle=C[f.c];x.lineWidth=s*.07;
+    for(const i of [sol[f.c][0],sol[f.c].at(-1)]){x.beginPath();x.arc(X(i),Y(i),s*(.36+.45*ease(p)),0,7);x.stroke()}}
+  for(const f of fx)if(f.k==='spark'){const p=(now-f.t0)/f.dur,r=s*(.45+.9*ease(p)); // 8 sparks fly out of both dots, turning as they go
+    x.globalAlpha=1-p*p;x.fillStyle=C[f.c];
+    for(const i of [sol[f.c][0],sol[f.c].at(-1)])for(let k=0;k<8;k++){const a=k*Math.PI/4+p;x.beginPath();x.arc(X(i)+Math.cos(a)*r,Y(i)+Math.sin(a)*r,s*.09*(1-p),0,7);x.fill()}}
+  x.globalAlpha=1;
+}
+
+function check(){
+  const done=paths.map((p,c)=>p.length>1&&dot[p.at(-1)]===c), f=done.filter(Boolean).length, filled=new Set(paths.flat()).size,
+    solved=!won&&f===sol.length&&filled===N;
+  if(!won)done.forEach((d,c)=>{if(d&&!wasDone[c]){play('ring',c,MS.ring);if(solved)play('spark',c,MS.spark)} // the winning connection also sparks
+    if(d&&!scored.has(c)){scored.add(c);total+=connVal()}}); // score: first connection of each color only
+  wasDone=done;
+  if(solved){won=1;cur=-1;earned=Math.round(total/10);stats.points+=earned;
+    const k=key();stats.solved[k]=(stats.solved[k]||0)+1;newRec=!(stats.best[k]<=sec);if(newRec)stats.best[k]=sec;save();
+    const wave=MS.wave*(2*n-2)+MS.pop;pulse(cv,'pop');play('win',null,wave,MS.lift); // board pops out, then the shine sweeps it
+    setTimeout(()=>won===1&&openDlg(),RM.matches?400:MS.lift+wave+150)}
+  $('st').textContent=won===2?'Solution shown. Tap Done for a new one':won?`Solved in ${fmt(sec)} · +${earned} points`:`Flows ${f}/${sol.length} · Pipe ${Math.round(filled*100/N)}%`;
+  $('st').className=won===1?'win':'';$('best').textContent=`${shape} · ${levelName(n)} ${n}×${n} · solved ${stats.solved[key()]||0}`;hud();
+}
+function hud(){$('tm').textContent=fmt(sec);setNum('sc',total);setNum('pts',stats.points)}
+// Numbers that change pop (CSS .bump) and count to their new value.
+function countUp(el,from,to,f=v=>v){const t0=el.t0=performance.now();
+  if(RM.matches||from===to)return el.textContent=f(to);
+  const step=t=>{if(el.t0!==t0)return;const k=Math.max(0,Math.min(1,(t-t0)/MS.fade));el.textContent=f(Math.round(from+(to-from)*(1-(1-k)**3)));if(k<1)requestAnimationFrame(step)};
+  requestAnimationFrame(step)}
+function setNum(id,v){const el=$(id),from=+el.dataset.v;el.dataset.v=v;
+  if(isNaN(from)||from===v){el.t0=0;el.textContent=v;return}
+  pulse(el,'bump');countUp(el,from,v)}
+setInterval(()=>{if(!won&&!document.hidden&&$('home').hidden){sec++;hud()}},1000); // pauses in the background and on the home screen
+
+const cellAt=e=>{const r=cv.getBoundingClientRect(),c=Math.floor((e.clientX-r.left)/r.width*n),w=Math.floor((e.clientY-r.top)/r.height*n);
+  ptr=[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]; // finger position for the halo
+  return c>=0&&w>=0&&c<n&&w<n&&M[w*n+c]?w*n+c:-1};
+
+cv.onpointerdown=e=>{
+  const i=cellAt(e);if(i<0||won)return;
+  if(dot[i]>=0){cur=dot[i];paths[cur]=[i]}                       // touching a dot restarts that color from it
+  else{cur=paths.findIndex(p=>p.includes(i));if(cur<0)return;paths[cur].length=paths[cur].indexOf(i)+1}
+  cv.setPointerCapture(e.pointerId);draw();check();
+};
+cv.onpointermove=e=>{
+  const t=cellAt(e);if(cur<0||t<0)return;
+  const p=paths[cur];
+  while(p.at(-1)!==t){                                           // walk one cell at a time so fast swipes don't skip
+    const a=p.at(-1),dr=(t/n|0)-(a/n|0),dc=t%n-a%n,b=Math.abs(dc)>=Math.abs(dr)?a+Math.sign(dc):a+Math.sign(dr)*n,k=p.indexOf(b);
+    if(k>=0){p.length=k+1;continue}                               // backtrack over own pipe
+    if(!M[b]||p.length>1&&dot[a]===cur||dot[b]>=0&&dot[b]!==cur)break; // off the board, pipe finished, or another color's dot
+    paths.forEach((q,o)=>{const j=q.indexOf(b);if(o!==cur&&j>=0)q.length=j}); // cut through other pipes
+    p.push(b);
+  }
+  draw();check();
+};
+cv.onpointerup=cv.onpointercancel=()=>{cur=-1;draw()};
+addEventListener('resize',resize);
+
+const openDlg=$('doneBtn').onclick=()=>{
+  $('dh').textContent=['Leave this puzzle?','Puzzle solved!','Solution shown'][won];
+  $('dsum').hidden=$('rec').hidden=won!==1;$('dt').textContent=fmt(sec);countUp($('ds'),0,total);countUp($('de'),0,earned,v=>'+'+v);
+  $('rec').textContent=newRec?`New record for ${shape} ${levelName(n)}`:`Record ${fmt(stats.best[key()]??0)}`;$('rec').className='rec-line'+(newRec?' new':'');
+  $('keepBtn').textContent=won?'View board':'Keep playing';$('goBtn').textContent=won===1?'Next puzzle':'New puzzle';
+  $('dlg').returnValue='';if(!$('dlg').open)$('dlg').showModal();
+};
+$('dlg').onclose=()=>{const r=$('dlg').returnValue;if(r==='go')newGame(shape,n);if(r==='home')showHome()};
+$('hintBtn').onclick=()=>{
+  if(won)return;
+  const cand=sol.map((g,c)=>c).filter(c=>!hints.has(c)&&!(paths[c].length===sol[c].length&&sol[c].every(i=>paths[c].includes(i)))),
+    c=cand[Math.random()*cand.length|0];
+  if(c===undefined)return $('st').textContent='Every pipe already has a hint';
+  if(stats.points<HINT)return $('st').textContent=`A hint costs ${HINT} points. Solve puzzles to earn more`;
+  stats.points-=HINT;hints.add(c);play('hint',c,MS.fade);save();draw();hud();
+};
+$('solBtn').onclick=()=>{if(won)return;paths=sol.map(s=>[...s]);won=2;cur=-1;draw();check()}; // won=2: revealed, not counted
+
+// Home screen: shape tiles (previewed from the real 9x9 mask) and one row per level with that shape's record and solves.
+const preview=sh=>'<svg viewBox="0 0 9 9" aria-hidden="true">'+maskOf(sh,9).map((on,i)=>on?`<rect x="${i%9+.08}" y="${(i/9|0)+.08}" width=".84" height=".84" rx=".2"/>`:'').join('')+'</svg>';
+function renderHome(){
+  $('shapes').innerHTML=Object.keys(SHAPES).map(sh=>`<button class="shape" data-shape="${sh}" aria-pressed="${sh===pick}">${preview(sh)}${sh}</button>`).join('');
+  $('levels').innerHTML=LEVELS.map(([name,z])=>{const k=pick+'-'+z,b=stats.best[k],f=flows(maskOf(pick,z).filter(Boolean).length,z);
+    return `<li><button class="level" data-n="${z}"><b>${name}</b><span class="sz">${z}×${z}<span class="flows" role="img" aria-label="${f} colors">${[...Array(f)].map((_,c)=>`<i style="background:var(--p${c})"></i>`).join('')}</span></span><span class="rec">${b!=null?'Record '+fmt(b):'No record yet'}<br>${stats.solved[k]||0} solved</span></button></li>`}).join('');
+  $('ptsLine').textContent=`${stats.points} points · a hint costs ${HINT}`;
+}
+function showHome(){pick=shape;renderHome();$('home').hidden=false;$('game').inert=true}
+$('shapes').onclick=e=>{const b=e.target.closest('.shape');if(!b)return;pick=b.dataset.shape;renderHome();$('shapes').querySelector(`[data-shape="${pick}"]`).focus()};
+$('levels').onclick=e=>{const b=e.target.closest('.level');if(!b)return;$('home').hidden=true;$('game').inert=false;newGame(pick,+b.dataset.n)};
+
+// Theme: follows the system until a switch is used, then the choice is saved with the stats (GPA-calc behavior).
+const mq=matchMedia('(prefers-color-scheme: dark)'), toggles=document.querySelectorAll('.theme-toggle'),
+  syncTheme=()=>{const d=root.dataset.theme?root.dataset.theme==='dark':mq.matches;toggles.forEach(t=>t.setAttribute('aria-checked',d));draw()};
+if(stats.theme)root.dataset.theme=stats.theme;
+toggles.forEach(t=>t.onclick=()=>{stats.theme=root.dataset.theme=t.getAttribute('aria-checked')==='true'?'light':'dark';save()});
+new MutationObserver(syncTheme).observe(root,{attributes:true,attributeFilter:['data-theme']});mq.addEventListener('change',syncTheme);
+
+const [ls,lz]=stats.last||[];
+newGame(ls in SHAPES?ls:'Square',LEVELS.some(l=>l[1]===lz)?lz:5);syncTheme();showHome(); // last board waits behind the home screen
+document.fonts?.ready.then(draw); // dot letters use the display face once it loads
+
+// Self-check: open with #test. Every shape x level: hints, scoring, records, and the generated solution through the win check.
+if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
+  const adj=(a,b)=>Math.abs(a-b)===n||Math.abs(a-b)===1&&(a/n|0)===(b/n|0);
+  for(const sh in SHAPES)for(const [,z] of LEVELS)for(let k=0;k<5;k++){newGame(sh,z);stats.points=HINT;$('hintBtn').click();bad+=stats.points!==0||hints.size!==1;
+    paths[0]=[...sol[0]];check();const t1=total;paths[0]=[sol[0][0]];check();paths[0]=[...sol[0]].reverse();check();bad+=t1!==connVal()||total!==t1; // reconnecting pays nothing
+    sec=k+5;paths=sol.map(s=>[...s]);check();
+    bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
+  console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)}
+</script>
