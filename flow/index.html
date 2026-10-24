@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Flow">
 <meta name="theme-color" content="#f7f4ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1b1714" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#1d1d1d" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preload" href="fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
@@ -16,69 +16,82 @@
 <style>
 @font-face{font-family:'IBM Plex Sans';font-weight:100 700;font-display:swap;src:url(fonts/ibm-plex-sans.woff2) format('woff2')} /* variable, latin only */
 @font-face{font-family:'Space Grotesk';font-weight:300 700;font-display:swap;src:url(fonts/space-grotesk.woff2) format('woff2')}
-/* Theme borrowed from GPA-calc: warm paper / toasted dark neutrals, Space Grotesk display + IBM Plex Sans body, 8/14px radii.
-   Palette: paper --bg, ink --tx, muted ink --txm, accent --orange (logo, points, board glow), interactive --blue. Glow shadow only on the board.
-   Layout: home screen (shape + level) overlays the game. Game: phone = one column; wide screens = board left, controls in a side column.
-   Pipe colors --p0..--p18 are per theme, each >=4.3:1 against the board (checked), dots also carry letters so color is never the only cue. */
+/* Look: graphite (dark, colors measured from the reference screenshot) and warm paper (light) form the free Classic background; the Shop sells others (body class theme-*).
+   Tone (Dark mode switch, else the system) sets ink, pipe colors and the panel base --panel. The background sets the page gradient,
+   the text sitting on it (--text-color) and --accent. Panels are --panel at 84%, so every background tints them; pills are accent
+   tinted, so both always match the background in use. Space Grotesk display + IBM Plex Sans body, 8/16px radii, pill buttons.
+   Layout: home screen (Play / Profile / Shop tabs) overlays the game. Game: phone = one column; wide screens = board left, controls in a side column.
+   Pipe colors --p0..--p18 are per tone, each >=4.3:1 against the board (checked), dots also carry letters so color is never the only cue. */
 :root{
-  --bg:#f7f4ef;--surface:#fffdfa;--s2:#ece7df;--s3:#e2ddd3;--border:rgba(60,40,20,.08);--bmed:rgba(60,40,20,.14);
-  --tx:#1c1c1a;--txm:#6a6a66;--green:#2a7a3b;--blue:#1a60b0;--bbg:#ddeaf9;--orange:#c05c00;--glow:rgba(255,158,68,.22);--amb:rgba(255,158,68,.3);
+  --bg:#f7f4ef;--panel:#fffdfa;--border:rgba(60,40,20,.08);--bmed:rgba(60,40,20,.14);
+  --tx:#1c1c1a;--txm:#6a6a66;--green:#2a7a3b;--blue:#3b3fc4;--orange:#c05c00;--accent:#b4621b;--lk:45%;
   --p0:#c62828;--p1:#1a60b0;--p2:#2a7a3b;--p3:#9a7300;--p4:#c05c00;--p5:#00838f;--p6:#b0247a;--p7:#6b46c1;--p8:#557a00;--p9:#8a5a34;--p10:#d6336c;--p11:#4b5563;--p12:#2b2722;--p13:#1818dc;--p14:#c918d5;--p15:#721830;--p16:#552267;--p17:#971197;--p18:#7c240e;
-  --r:8px;--rl:14px;--col:600px;
+  --r:8px;--rl:16px;--col:600px;
   --fs-xs:11px;--fs-sm:13px;--fs-base:15px;--fs-md:17px;--fs-lg:20px;--fs-num:22px; /* type scale: labels, UI, body, dialog title, brand, stat numbers */
   --t-fast:120ms;--t-med:320ms;--ease-out:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.3,1.6,.5,1); /* motion tokens */
   --font-body:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
   --font-display:'Space Grotesk',var(--font-body);
   padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#1b1714;--surface:#242019;--s2:#2d2822;--s3:#37312a;--border:rgba(255,235,215,.08);--bmed:rgba(255,235,215,.14);
-  --tx:#f0efe9;--txm:#9a9a94;--green:#4ec668;--blue:#5fa8f5;--bbg:#0d2238;--orange:#f5a742;--glow:rgba(255,140,60,.22);--amb:rgba(255,140,60,.18);
+  --bg:#1d1d1d;--panel:#232228;--border:rgba(255,255,255,.07);--bmed:rgba(255,255,255,.15);--lk:80%;
+  --tx:#f2f2f2;--txm:#b1b1b1;--green:#4ec668;--blue:#858bff;--orange:#f5a742;--accent:#cf9f5b;
   --p0:#ff6b6b;--p1:#5fa8f5;--p2:#4ec668;--p3:#f5d142;--p4:#f5a742;--p5:#3fd0e0;--p6:#f062c0;--p7:#a98bff;--p8:#b5dc5a;--p9:#c9935f;--p10:#ffadc6;--p11:#9aa3ad;--p12:#f4f1ea;--p13:#3eea3e;--p14:#d445ea;--p15:#9addb1;--p16:#f4e89a;--p17:#c2a0df;--p18:#dc5a86;
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#1b1714;--surface:#242019;--s2:#2d2822;--s3:#37312a;--border:rgba(255,235,215,.08);--bmed:rgba(255,235,215,.14);
-  --tx:#f0efe9;--txm:#9a9a94;--green:#4ec668;--blue:#5fa8f5;--bbg:#0d2238;--orange:#f5a742;--glow:rgba(255,140,60,.22);--amb:rgba(255,140,60,.18);
+  --bg:#1d1d1d;--panel:#232228;--border:rgba(255,255,255,.07);--bmed:rgba(255,255,255,.15);--lk:80%;
+  --tx:#f2f2f2;--txm:#b1b1b1;--green:#4ec668;--blue:#858bff;--orange:#f5a742;--accent:#cf9f5b;
   --p0:#ff6b6b;--p1:#5fa8f5;--p2:#4ec668;--p3:#f5d142;--p4:#f5a742;--p5:#3fd0e0;--p6:#f062c0;--p7:#a98bff;--p8:#b5dc5a;--p9:#c9935f;--p10:#ffadc6;--p11:#9aa3ad;--p12:#f4f1ea;--p13:#3eea3e;--p14:#d445ea;--p15:#9addb1;--p16:#f4e89a;--p17:#c2a0df;--p18:#dc5a86;
   color-scheme:dark}
-/* Sky: the page background follows the time of day (class on body, set by app.js; a sky can be pinned in Settings).
-   Dark mode still only re-colors the cards and board; text sitting straight on the sky uses --text-color.
-   Registered so the 3s transitions actually blend the gradient and swing the sun/moon along their arc.
-   --orbital-rotation: 0 = left horizon, 90deg = overhead, 180deg = right horizon; the moon rides opposite the sun. */
+:root{--surface:color-mix(in srgb,var(--panel) 84%,transparent);--s2:color-mix(in srgb,var(--panel) 84%,var(--tx) 8%);--s3:color-mix(in srgb,var(--panel) 76%,var(--tx) 16%)} /* see-through panels */
+/* Backgrounds. Registered so the 3s transitions actually blend the gradient and swing the sun/moon along their arc. */
 @property --bg-gradient-top{syntax:'<color>';inherits:true;initial-value:#0f2027}
 @property --bg-gradient-mid{syntax:'<color>';inherits:true;initial-value:#203a43}
 @property --bg-gradient-bottom{syntax:'<color>';inherits:true;initial-value:#2c5364}
 @property --orbital-rotation{syntax:'<angle>';inherits:true;initial-value:140deg}
 :root{--text-color:#eceff1;--celestial-color:#f5f5f5;--celestial-shadow:rgba(255,255,255,.4)}
+.theme-classic{--bg-gradient-top:var(--bg);--bg-gradient-mid:var(--bg);--bg-gradient-bottom:var(--bg);--text-color:var(--tx)} /* follows the Dark mode switch */
+.theme-classic :is(.lead,.home .eyebrow,#st,footer,.pts-line){color:var(--txm)} /* secondary text, as in the reference */
+.theme-ocean{--bg-gradient-top:#0b2540;--bg-gradient-mid:#0f4468;--bg-gradient-bottom:#136a8f;--text-color:#e8f4fb;--accent:#4fc3dc}
+.theme-forest{--bg-gradient-top:#0d2418;--bg-gradient-mid:#1a4430;--bg-gradient-bottom:#2f6a45;--text-color:#eaf5ec;--accent:#7fd48a}
+.theme-dunes{--bg-gradient-top:#fbe3bf;--bg-gradient-mid:#f2c189;--bg-gradient-bottom:#e39a5f;--text-color:#3b2412;--accent:#c2552b}
+.theme-sakura{--bg-gradient-top:#fff0f5;--bg-gradient-mid:#f9c9da;--bg-gradient-bottom:#f0a3c0;--text-color:#4a1d2f;--accent:#d64f86}
+.theme-aurora{--bg-gradient-top:#07131f;--bg-gradient-mid:#0e4a45;--bg-gradient-bottom:#3b2a6e;--text-color:#e6fff6;--accent:#5ff2b0}
+.theme-synth{--bg-gradient-top:#1a0533;--bg-gradient-mid:#4a0f63;--bg-gradient-bottom:#8a1f5c;--text-color:#ffe8f4;--accent:#ff5fb8}
+.theme-sky{--accent:#f5a742} /* Time of day: the gradient comes from the sky classes below (set by app.js; a sky can be pinned in Settings) */
+/* --orbital-rotation: 0 = left horizon, 90deg = overhead, 180deg = right horizon; the moon rides opposite the sun. */
 .sunrise{--bg-gradient-top:#ff7e5f;--bg-gradient-mid:#feb47b;--bg-gradient-bottom:#ffeccc;--text-color:#2c3e50;--celestial-color:#fffcfa;--celestial-shadow:rgba(255,230,200,.6);--orbital-rotation:15deg} /* 5AM-8AM */
 .daytime{--bg-gradient-top:#56ccf2;--bg-gradient-mid:#4ea8de;--bg-gradient-bottom:#2f80ed;--text-color:#fff;--celestial-color:#fffde6;--celestial-shadow:rgba(255,253,230,.8);--orbital-rotation:80deg} /* 8AM-5PM */
 .sunset{--bg-gradient-top:#9442fe;--bg-gradient-mid:#b83b5e;--bg-gradient-bottom:#f08a5d;--text-color:#ffcad4;--celestial-color:#ffeedd;--celestial-shadow:rgba(240,138,93,.6);--orbital-rotation:165deg} /* 5PM-8PM */
 .nighttime{--bg-gradient-top:#050b14;--bg-gradient-mid:#101f32;--bg-gradient-bottom:#1a2a3a;--text-color:#e0e6ed;--celestial-color:#f4f5f7;--celestial-shadow:rgba(255,255,255,.2);--orbital-rotation:260deg} /* 8PM-5AM: sun down, moon up */
-:is(.daytime,.sunset) :is(header,#st,#solBtn,footer,.home .eyebrow,.pts-line){text-shadow:0 1px 3px rgba(0,0,0,.35)} /* light text on the pale ends of those skies */
+:is(.daytime,.sunset) :is(header,#st,#solBtn,footer,.home .eyebrow,.pts-line,.lead){text-shadow:0 1px 3px rgba(0,0,0,.35)} /* light text on the pale ends of those skies */
 .sky{position:fixed;inset:0;z-index:-1;pointer-events:none} /* behind everything; the transparent home screen shows it too */
+body:not(.theme-sky) .sky{display:none}
 .sky i{position:absolute;width:80px;height:80px;margin:-40px;border-radius:50%;background:var(--celestial-color);box-shadow:0 0 40px var(--celestial-shadow);
   left:calc(50% - 42vw*cos(var(--orbital-rotation)));top:calc(100% - 85vh*sin(var(--orbital-rotation)));transition:background-color 3s ease,box-shadow 3s ease} /* elliptical arc: stays on screen on phones too */
 .sky i+i{left:calc(50% + 42vw*cos(var(--orbital-rotation)));top:calc(100% + 85vh*sin(var(--orbital-rotation)))}
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{margin:0;background:linear-gradient(180deg,var(--bg-gradient-top) 0%,var(--bg-gradient-mid) 50%,var(--bg-gradient-bottom) 100%) fixed;color:var(--text-color);
+  --glow:color-mix(in srgb,var(--accent) 22%,transparent);--amb:color-mix(in srgb,var(--accent) 26%,transparent);--link:color-mix(in srgb,var(--accent) var(--lk),var(--tx)); /* accent-derived: link = accent text pulled toward ink until readable */
   font:var(--fs-base)/1.55 var(--font-body);-webkit-font-smoothing:antialiased;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-inline:16px;padding-block:8px 12px;
   touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
   transition:--bg-gradient-top 3s ease-in-out,--bg-gradient-mid 3s ease-in-out,--bg-gradient-bottom 3s ease-in-out,--orbital-rotation 3s cubic-bezier(.4,0,.2,1),color 3s ease-in-out}
+body.theme-classic{transition-duration:.3s} /* tracks the Dark mode switch, so it should feel instant */
 @media (prefers-reduced-motion:reduce){*,::backdrop{animation-duration:.001ms!important;animation-delay:0s!important;transition-duration:.001ms!important}}
-:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:4px}
 [hidden]{display:none!important}
 #game{display:contents} /* wrapper only for inert while home is up; its children stay in body's layout */
-#game[inert]{visibility:hidden} /* the home screen is see-through (sky behind it), so hide the waiting board */
+#game[inert]{visibility:hidden} /* the home screen is see-through (background behind it), so hide the waiting board */
 header,.card,#wrap,.bar,footer{width:100%;max-width:var(--col)} /* one shared column edge, board included */
 header,.bar{display:flex;align-items:center;gap:8px}
 .brand{display:flex;align-items:center;gap:8px;margin:0 auto 0 0;font:700 var(--fs-lg)/1.15 var(--font-display);letter-spacing:-.4px}
-.brand svg{color:var(--orange);flex-shrink:0}
+.brand svg{color:var(--accent);flex-shrink:0}
 .card{background:var(--surface);color:var(--tx);border:.5px solid var(--bmed);border-radius:var(--rl);transition:background .2s}
 #hud{align-items:center;flex-wrap:wrap;row-gap:10px;padding:10px 14px}
 .stats{display:flex;gap:18px;font-variant-numeric:tabular-nums}
 .stats div{display:grid;gap:2px}
-.stats b{font-size:var(--fs-xs);font-weight:500;color:var(--txm);text-transform:uppercase;letter-spacing:.04em}
+.stats b{font-size:var(--fs-xs);font-weight:500;color:var(--txm);text-transform:uppercase;letter-spacing:.08em}
 .stats span{font:700 var(--fs-num)/1 var(--font-display);letter-spacing:-.5px;transform-origin:left center}
 .bump{animation:bump var(--t-med) var(--spring)}
 @keyframes bump{40%{transform:scale(1.2)}}
@@ -91,25 +104,30 @@ canvas{touch-action:none;border-radius:var(--rl);filter:drop-shadow(0 10px 12px 
 @keyframes pop{45%{transform:scale(var(--pop,1.2));filter:drop-shadow(0 22px 22px var(--glow)) drop-shadow(0 0 36px var(--amb))}} /* --pop set per layout in resize() */
 #st{flex:1;min-width:0;font-size:var(--fs-sm);line-height:1.35;font-variant-numeric:tabular-nums}
 #st.win{font-weight:600}
-footer{font-size:var(--fs-sm);font-variant-numeric:tabular-nums}
-.btn{min-height:44px;padding:0 16px;font:500 var(--fs-sm) var(--font-body);border-radius:var(--r);cursor:pointer;border:.5px solid var(--bmed); /* 44px tap target at every width */
-  background:var(--s2);color:var(--tx);white-space:nowrap;transition:background var(--t-fast),opacity var(--t-fast),transform var(--t-fast) var(--ease-out)}
-.btn:hover{background:var(--s3)}
+footer{font:600 var(--fs-xs)/1.4 var(--font-body);text-transform:uppercase;letter-spacing:.12em;font-variant-numeric:tabular-nums}
+footer::before{content:'';display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--accent);vertical-align:1px}
+.btn{min-height:44px;padding:0 18px;font:600 var(--fs-sm) var(--font-body);border-radius:999px;cursor:pointer;border:1px solid var(--bmed); /* pills; 44px tap target at every width */
+  background:var(--surface);color:var(--tx);white-space:nowrap;transition:background var(--t-fast),opacity var(--t-fast),transform var(--t-fast) var(--ease-out)}
+.btn:hover{background:var(--s2)}
 .btn:active,.level:active,.shape:active{transform:scale(.96)}
-.btn-primary,.btn-primary:hover{background:var(--tx);color:var(--bg);border-color:var(--tx)}
-.btn-primary:hover{opacity:.82}
-.btn-ghost{background:none;border-color:transparent;color:inherit} /* sky text in the bar */
+.btn-primary,.btn-primary:hover{background:color-mix(in srgb,var(--accent) 18%,var(--bg));border-color:color-mix(in srgb,var(--accent) 60%,transparent);color:var(--tx)}
+.btn-quiet{background:rgba(0,0,0,.1);color:var(--link)}
+.theme-classic .btn-quiet{color:var(--blue)}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{background:none;border-color:transparent;color:inherit} /* text on the background in the bar */
 dialog .btn-ghost{color:var(--txm)}
 .btn-ghost:hover{background:var(--s2);color:var(--tx)}
-.btn-sample{background:var(--bbg);color:var(--blue);border-color:var(--blue);font-weight:600}
-.btn-sample:hover{background:var(--blue);color:var(--surface)}
+.btn-link,.btn-link:hover{background:none;border-color:transparent;color:var(--link)}
+.btn-sample{background:color-mix(in srgb,var(--accent) 14%,var(--panel));color:var(--link);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.btn-sample:hover{background:color-mix(in srgb,var(--accent) 26%,var(--panel))}
+.btn[aria-disabled="true"]{opacity:.45;cursor:default}
 .theme-toggle{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 4px;background:none;border:0;color:inherit;font:var(--fs-sm) var(--font-body);cursor:pointer}
 .toggle-track{width:30px;height:17px;background:var(--s3);border-radius:9px;position:relative;transition:background .2s}
 .toggle-thumb{position:absolute;top:2px;left:2px;width:13px;height:13px;background:var(--txm);border-radius:50%;transition:transform .2s,background .2s}
-.theme-toggle[aria-checked="true"] .toggle-track{background:var(--blue)}
+.theme-toggle[aria-checked="true"] .toggle-track{background:var(--accent)}
 .theme-toggle[aria-checked="true"] .toggle-thumb{transform:translateX(13px);background:#fff}
 dialog{margin:auto;width:min(360px,calc(100% - 32px));border:.5px solid var(--bmed);border-radius:var(--rl);background:var(--surface);color:var(--tx);
-  padding:1.5rem 1.5rem 1.25rem;box-shadow:0 24px 48px -24px rgba(0,0,0,.45)}
+  padding:1.5rem 1.5rem 1.25rem;box-shadow:0 24px 48px -24px rgba(0,0,0,.45);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
 dialog::backdrop{background:rgba(20,14,8,.45)}
 dialog[open]{animation:rise var(--t-med) var(--ease-out)}           /* popup rises in; closing stays instant (exit faster than enter) */
 dialog[open]::backdrop{animation:fade .32s cubic-bezier(.2,.8,.2,1)} /* literal: ::backdrop can't read custom properties in older Safari */
@@ -125,22 +143,29 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .skies{display:grid;gap:6px;margin:0;padding:0;border:0}
 .skies legend{padding:0}
 .skies label{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:12px;min-height:48px;padding:6px 12px;border:.5px solid var(--bmed);border-radius:var(--r);cursor:pointer}
-.skies label:has(:checked){border-color:var(--tx);box-shadow:inset 0 0 0 1px var(--tx)}
-.skies input{margin:0;accent-color:var(--tx)}
+.skies label:has(:checked){border-color:var(--link);box-shadow:inset 0 0 0 1px var(--link)}
+.skies:disabled label{opacity:.45;cursor:default}
+.skies input{margin:0;accent-color:var(--link)}
 .skies i{width:28px;height:28px;border-radius:50%;background:linear-gradient(var(--bg-gradient-top),var(--bg-gradient-mid),var(--bg-gradient-bottom))}
 .skies small{font-size:var(--fs-sm);color:var(--txm)}
-/* Home: pick a shape, then tap a level to start. Shapes are drawn from the same masks the generator uses. */
-.home{position:fixed;inset:0;z-index:5;overflow-y:auto;touch-action:pan-y;display:flex;flex-direction:column;align-items:center;gap:20px;
+/* Home: Play (pick a shape, then tap a level), Profile (points, hardest-level records) and Shop tabs. Shapes are drawn from the generator's masks. */
+.home{position:fixed;inset:0;z-index:5;overflow-y:auto;touch-action:pan-y;display:flex;flex-direction:column;align-items:center;gap:18px;
   padding-inline:16px;padding-block:calc(env(safe-area-inset-top,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 24px)}
 .home>*{width:100%;max-width:880px}
+.tabs{display:flex;gap:4px;padding:4px;background:var(--surface);border:.5px solid var(--bmed);border-radius:999px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.tabs button{flex:1;min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;background:none;color:var(--txm);font:600 var(--fs-sm) var(--font-body);cursor:pointer;transition:background var(--t-fast),color var(--t-fast)}
+.tabs button[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 18%,var(--bg));color:var(--tx);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 60%,transparent)}
+.tabs svg{flex-shrink:0}
+.tab{display:grid;gap:18px}
+.lead{margin:0;text-align:center;font-size:var(--fs-base)}
 .home-body{display:grid;gap:24px}
-.eyebrow{font:600 var(--fs-xs)/1.2 var(--font-body);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px}
+.eyebrow{font:600 var(--fs-xs)/1.2 var(--font-body);text-transform:uppercase;letter-spacing:.12em;margin:0 0 10px}
 .shapes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .shape{display:grid;justify-items:center;gap:8px;padding:12px 6px 10px;background:var(--surface);border:.5px solid var(--bmed);border-radius:var(--rl);
   color:var(--txm);font:500 var(--fs-sm) var(--font-body);cursor:pointer;transition:transform var(--t-fast) var(--ease-out),color var(--t-fast)}
 .shape svg{width:100%;max-width:60px;aspect-ratio:1;fill:var(--s3);transition:fill var(--t-med)}
-.shape[aria-pressed="true"]{color:var(--tx);border-color:var(--tx);box-shadow:inset 0 0 0 1px var(--tx)}
-.shape[aria-pressed="true"] svg{fill:var(--orange)}
+.shape[aria-pressed="true"]{color:var(--tx);border-color:var(--link);box-shadow:inset 0 0 0 1px var(--link)}
+.shape[aria-pressed="true"] svg{fill:var(--accent)}
 .levels{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .level{width:100%;min-height:60px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:10px 16px;text-align:left;
   background:var(--surface);border:.5px solid var(--bmed);border-radius:var(--rl);color:var(--tx);font:inherit;cursor:pointer;transition:background var(--t-fast),transform var(--t-fast) var(--ease-out)}
@@ -150,11 +175,55 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .level .rec{text-align:right;line-height:1.35}
 .flows{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}.flows i{width:6px;height:6px;border-radius:50%} /* the exact colors this level's board uses */
 .pts-line{margin:12px 0 0;font-size:var(--fs-sm)}
+/* Profile */
+.profile{display:grid;gap:18px;padding:18px;justify-self:center}
+.prof-head{display:flex;align-items:center;gap:14px}
+.avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:color-mix(in srgb,var(--accent) 26%,var(--panel));color:var(--link)}
+#profPts{color:var(--orange)}
+.prof-sub{font-size:var(--fs-sm);color:var(--txm);margin:0}
+#toShop{margin-left:auto}
+.profile .eyebrow{color:var(--txm)}
+.bests{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.bests li{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:12px;min-height:48px;padding:6px 12px;border-radius:var(--r);background:var(--s2)}
+.bests svg{width:28px;fill:var(--accent)}
+.bests b{font:700 var(--fs-md)/1 var(--font-display);font-variant-numeric:tabular-nums}
+.bests small{display:block;font-size:var(--fs-sm);color:var(--txm);font-variant-numeric:tabular-nums}
+.bests b small{text-align:right;font:400 var(--fs-xs) var(--font-body);margin-top:3px}
+/* Shop: one tile per cosmetic, tier badge colored by rarity. Previews reuse the real background classes. */
+.shop{display:grid;gap:24px}
+.wallet{margin:0;text-align:center;font-size:var(--fs-sm)}
+.wallet b{font:700 var(--fs-lg) var(--font-display);color:var(--orange)}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.item{display:grid;justify-items:center;align-content:start;gap:8px;padding:16px 10px 10px;text-align:center}
+.item:has(.t-Legendary){border-color:color-mix(in srgb,#f59e0b 65%,transparent)}
+.item b{font:600 var(--fs-base)/1.2 var(--font-display)}
+.item .btn{width:100%;padding:0 10px}
+.item .in-use{opacity:1;background:none;border-color:var(--link);color:var(--link)} /* equipped: reads as selected, not disabled */
+.item:has(.in-use){box-shadow:inset 0 0 0 1px var(--link)}
+.tier{font:600 var(--fs-xs)/1 var(--font-body);text-transform:uppercase;letter-spacing:.08em;padding:4px 8px;border-radius:999px;
+  color:color-mix(in srgb,var(--t) 65%,var(--tx));background:color-mix(in srgb,var(--t) 16%,transparent)}
+.t-Free{--t:var(--txm)}.t-Common{--t:#7d8794}.t-Rare{--t:#3b82f6}.t-Epic{--t:#a855f7}.t-Legendary{--t:#f59e0b}
+.pv{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;--d:var(--p1)}
+.pv-bg{background:linear-gradient(var(--bg-gradient-top),var(--bg-gradient-mid),var(--bg-gradient-bottom));box-shadow:inset 0 0 0 1px var(--bmed)}
+.pv-bg.theme-classic{background:linear-gradient(135deg,#f7f4ef 50%,#1d1d1d 50%)} /* both tones */
+.pv-dot{background:var(--s2)}
+.pv-dot::before{content:'';width:34px;height:34px;border-radius:50%;background:linear-gradient(#fff6,#fff0 45%,#0002),var(--d)}
+.dot-flat::before{background:var(--d)}
+.dot-ring::before{background:none;box-shadow:inset 0 0 0 5px var(--d)}
+.dot-gem::before{border-radius:4px;transform:rotate(45deg) scale(.82)}
+.dot-star::before{width:40px;height:40px;border-radius:0;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.win-wave{background:repeating-linear-gradient(135deg,var(--p0) 0 8px,var(--p1) 8px 16px,var(--p2) 16px 24px,var(--p3) 24px 32px)}
+.win-ripple{background:repeating-radial-gradient(circle,var(--accent) 0 3px,var(--s2) 3px 8px)}
+.win-confetti{background:radial-gradient(circle at 26% 30%,var(--p0) 0 4px,#0000 5px),radial-gradient(circle at 70% 24%,var(--p1) 0 4px,#0000 5px),radial-gradient(circle at 46% 58%,var(--p3) 0 4px,#0000 5px),
+  radial-gradient(circle at 76% 70%,var(--p6) 0 4px,#0000 5px),radial-gradient(circle at 30% 78%,var(--p2) 0 4px,#0000 5px),var(--s2)}
+.win-rainbow{background:conic-gradient(#ff5e5e,#ffd24d,#5ee07a,#4dc9ff,#8a7dff,#ff6ec7,#ff5e5e)}
+.win-fireworks{background:radial-gradient(circle,var(--s2) 0 6px,#0000 7px),repeating-conic-gradient(var(--p3) 0 9deg,var(--p0) 9deg 18deg,#0000 18deg 36deg),var(--s2)}
 @media (min-width:760px){
-  .home{padding-block:calc(env(safe-area-inset-top,0px) + 24px) 40px;gap:32px}
+  .home{padding-block:calc(env(safe-area-inset-top,0px) + 24px) 40px;gap:28px}
   .home-body{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:start}
   .shapes{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   .shape{padding:20px 12px 16px}.shape svg{max-width:112px}
+  .tabs{max-width:520px}
 }
 /* Wide screens (tablet/phone landscape, desktop): the board takes the left, controls stack in a side column.
    Board and brand share a top edge at every size. */
@@ -162,20 +231,38 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
   body{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,340px);grid-template-rows:auto auto auto auto 1fr;
     column-gap:clamp(24px,4vw,56px);align-items:start;padding-inline:clamp(16px,4vw,48px);padding-block:clamp(12px,4vh,40px)}
   #wrap{grid-column:1;grid-row:1/-1;height:100%;max-width:none;max-height:none;place-items:start center}
-  header,.card,.bar,footer{grid-column:2;max-width:none}
+  #game>header,#hud,.bar,footer{grid-column:2;max-width:none} /* game panels only: home cards sit in their own grids */
 }
 </style>
 <div class="sky" aria-hidden="true"><i></i><i></i></div> <!-- sun, moon -->
-<section id="home" class="home" aria-label="Choose a board">
+<section id="home" class="home" aria-label="Flow home">
   <header>
     <h1 class="brand"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v7a5 5 0 0 0 5 5h7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><circle cx="6" cy="6" r="4" fill="currentColor"/><circle cx="18" cy="18" r="4" fill="currentColor"/></svg>Flow</h1>
     <button class="theme-toggle" role="switch" aria-checked="false">Dark mode<span class="toggle-track"><span class="toggle-thumb"></span></span></button>
     <button class="btn btn-ghost icon-btn set-btn" aria-label="Settings" title="Settings"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="3"/><circle cx="8" cy="17" r="3"/></svg></button>
   </header>
-  <div class="home-body">
-    <div><h2 class="eyebrow">Shape</h2><div class="shapes" id="shapes"></div></div>
-    <div><h2 class="eyebrow">Level</h2><ul class="levels" id="levels"></ul><p class="pts-line" id="ptsLine"></p></div>
+  <nav class="tabs" id="tabs" aria-label="Home sections">
+    <button data-tab="play" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></svg>Play</button>
+    <button data-tab="profile" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0z"/></svg>Profile</button>
+    <button data-tab="shop" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>Shop</button>
+  </nav>
+  <div class="tab" id="tab-play">
+    <p class="lead">Join each pair of dots. Fill every square.</p>
+    <div class="home-body">
+      <div><h2 class="eyebrow">1 · Choose a shape</h2><div class="shapes" id="shapes"></div></div>
+      <div><h2 class="eyebrow">2 · Pick a level</h2><ul class="levels" id="levels"></ul><p class="pts-line" id="ptsLine"></p></div>
+    </div>
   </div>
+  <div class="tab" id="tab-profile" hidden>
+    <section class="card profile" aria-label="Your profile">
+      <div class="prof-head"><span class="avatar" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0z"/></svg></span>
+        <div class="stats prof-stats"><div><b>Points</b><span id="profPts"></span></div><div><b>Hardest cleared</b><span id="profTop"></span></div></div>
+        <button class="btn btn-primary icon-btn" id="toShop" aria-label="Open the shop" title="Shop"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg></button></div>
+      <div><h2 class="eyebrow" id="bestsHead"></h2><ul class="bests" id="bests"></ul></div>
+      <p class="prof-sub" id="profTotal"></p>
+    </section>
+  </div>
+  <div class="tab shop" id="tab-shop" hidden></div>
 </section>
 <div id="game">
   <header>
@@ -185,18 +272,19 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
   </header>
   <section id="hud" class="card stats" aria-label="Game stats"><div><b>Time</b><span id="tm"></span></div><div><b>Score</b><span id="sc"></span></div><div><b>Points</b><span id="pts"></span></div><button class="btn btn-sample" id="hintBtn">Hint −10</button></section>
   <main id="wrap"><canvas id="cv" aria-label="Flow puzzle board"></canvas></main>
-  <div class="bar"><span id="st" aria-live="polite"></span><button class="btn btn-ghost" id="solBtn">Solution</button><button class="btn btn-primary" id="doneBtn">Done</button></div>
+  <div class="bar"><span id="st" aria-live="polite"></span><button class="btn btn-ghost" id="solBtn">Solution</button><button class="btn btn-quiet" id="doneBtn">Done</button></div>
   <footer id="best"></footer>
 </div>
 <dialog id="dlg"><form method="dialog">
   <h2 id="dh"></h2>
   <div class="stats" id="dsum"><div><b>Time</b><span id="dt"></span></div><div><b>Score</b><span id="ds"></span></div><div><b>Points</b><span id="de"></span></div></div>
   <p class="rec-line" id="rec"></p>
-  <div class="row"><button class="btn btn-ghost" id="keepBtn" value=""></button><button class="btn" value="home">Home</button><button class="btn btn-primary" id="goBtn" value="go" autofocus></button></div>
+  <div class="row"><button class="btn btn-ghost" id="keepBtn" value=""></button><button class="btn btn-link" value="home">Change level</button><button class="btn btn-primary" id="goBtn" value="go" autofocus></button></div>
 </form></dialog>
 <dialog id="setDlg"><form method="dialog" id="setForm">
   <h2>Settings</h2>
-  <fieldset class="skies"><legend class="eyebrow">Sky</legend>
+  <p class="rec-line" id="skyHint">Equip Time of day in the Shop to change the sky.</p>
+  <fieldset class="skies" id="skyPick"><legend class="eyebrow">Sky</legend>
     <label><input type="radio" name="sky" value="auto"><i id="autoSw"></i>Auto<small>Follows the clock</small></label>
     <label><input type="radio" name="sky" value="sunrise"><i class="sunrise"></i>Sunrise<small>5–8 AM</small></label>
     <label><input type="radio" name="sky" value="daytime"><i class="daytime"></i>Daytime<small>8 AM–5 PM</small></label>
