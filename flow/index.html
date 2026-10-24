@@ -147,6 +147,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .win-bar{flex-direction:column;gap:2px} /* solved: wide Next pill with Change level under it, as in the reference */
 .win-bar .btn-primary{width:100%;min-height:45px;font-size:var(--fs-base)} /* 45px = the reference pill's height */
 .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+#dlg .row{display:grid;grid-template-columns:1fr 1fr} /* four pills in a 2x2 grid */
 .icon-btn{padding:0 12px}
 /* Settings: sky picker. Each swatch carries its sky's class, so it previews the real gradient. */
 .skies{display:grid;gap:6px;margin:0;padding:0;border:0}
@@ -289,7 +290,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 </div>
 <dialog id="dlg"><form method="dialog">
   <h2 id="dh"></h2>
-  <div class="row"><button class="btn btn-ghost" id="keepBtn" value=""></button><button class="btn btn-link" value="home">Change level</button><button class="btn btn-primary" value="go" autofocus>New puzzle</button></div>
+  <div class="row"><button class="btn" id="keepBtn" value=""></button><button class="btn" value="home">Change level</button><button class="btn" value="home">Home</button><button class="btn btn-primary" value="go" autofocus>New puzzle</button></div>
 </form></dialog>
 <dialog id="setDlg"><form method="dialog" id="setForm">
   <h2>Settings</h2>
