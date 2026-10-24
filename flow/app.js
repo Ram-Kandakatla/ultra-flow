@@ -236,7 +236,7 @@ $('tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(b)tab(b.dataset.
 $('toShop').onclick=()=>tab('shop');
 // Profile: points beside the fastest time on the hardest difficulty, then one row per shape with its best time on that difficulty
 // (a shape not cleared on it says so; times from easier levels are never shown here).
-function renderProfile(){const [nm,z]=LEVELS.at(-1),t=sh=>+stats.best[sh+'-'+z],ok=sh=>stats.best[sh+'-'+z]!=null,done=Object.keys(SHAPES).filter(ok);
+function renderProfile(){const [nm,z]=LEVELS.at(-1),t=sh=>+stats.best[sh+'-'+z],ok=sh=>stats.best[sh+'-'+z]!=null&&Number.isFinite(t(sh)),done=Object.keys(SHAPES).filter(ok);
   $('profPts').textContent=+stats.points||0;$('profBestHead').textContent=`Best ${nm}`;
   $('profBest').textContent=done.length?fmt(Math.min(...done.map(t))):'None yet';$('bestsHead').textContent=`Best times · ${nm} ${z}×${z} (hardest)`;
   $('bests').innerHTML=Object.keys(SHAPES).map(sh=>`<li>${preview(sh)}<span>${sh}<small>${ok(sh)?`${+stats.solved[sh+'-'+z]||0} solved`:`Not cleared on ${nm} yet`}</small></span>${ok(sh)?`<b>${fmt(t(sh))}</b>`:''}</li>`).join('');
@@ -285,7 +285,7 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
     bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||sol.length!==flows(N,n)||sol.some(s=>s.length>2*N/sol.length)||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
   {const b=stats.best,B=()=>$('bests').textContent;stats.best={'Ring-9':40,'Ring-13':90,'Square-13':70,'Plus-5':9};renderProfile(); // profile: Godlike clears only
     bad+=$('profBest').textContent!=='1:10'||!B().includes('1:30')||!B().includes('1:10')||!B().includes('PlusNot cleared on Godlike yet')||B().includes('0:09')||B().includes('0:40')||B().includes('—');
-    stats.best={'Plus-5':9};renderProfile();bad+=(B().match(/Not cleared on Godlike yet/g)||[]).length!==4||$('profBest').textContent!=='None yet';stats.best=b}
+    stats.best={'Plus-5':9,'Ring-13':'x'};renderProfile();bad+=(B().match(/Not cleared on Godlike yet/g)||[]).length!==4||B().includes('NaN')||$('profBest').textContent!=='None yet';stats.best=b}
   bad+=[4,5,7,8,16,17,19,20,23].map(skyAt)+''!=='nighttime,sunrise,sunrise,daytime,daytime,sunset,sunset,nighttime,nighttime';
   const keep=[stats.points,stats.own,stats.use];stats.own=[];stats.use={}; // shop: can't overspend, pays once, re-equips free
   stats.points=TIER.Rare-1;bad+=buy('bg','dunes')||stats.points!==TIER.Rare-1||use('bg')!=='classic';
