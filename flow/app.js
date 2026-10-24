@@ -293,7 +293,8 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   stats.points=TIER.Rare-1;bad+=buy('bg','dunes')||stats.points!==TIER.Rare-1||use('bg')!=='classic';
   stats.points=TIER.Rare;bad+=!buy('bg','dunes')||stats.points!==0||use('bg')!=='dunes'||!document.body.classList.contains('theme-dunes');
   {const c=id=>getComputedStyle($(id)).backgroundColor; // edge strips carry the background's end colors at once (no fade), and theme-color follows
-    bad+=c('edgeT')!=='rgb(251, 227, 191)'||c('edgeB')!=='rgb(227, 154, 95)'||document.querySelector('meta[name=theme-color]').content!==c('edgeT')}
+    bad+=c('edgeT')!=='rgb(251, 227, 191)'||c('edgeB')!=='rgb(227, 154, 95)'||document.querySelector('meta[name=theme-color]').content!==c('edgeT')
+      ||getComputedStyle(document.body).backgroundColor==='rgba(0, 0, 0, 0)'} // the page has a solid base color for Safari's under-page area
   bad+=!buy('bg','dunes')||stats.points!==0||!buy('bg','classic')||use('bg')!=='classic'||buy('bg','nope')||buy('toString','x');
   for(const cat in SHOP)for(const [id] of SHOP[cat][1]){stats.points=1e4;bad+=!buy(cat,id)||use(cat)!==id; // every cosmetic equips and draws
     fx=[{k:id==='confetti'||id==='fireworks'?id:'win',t0:performance.now()-400,dur:MS.burst}];draw()}

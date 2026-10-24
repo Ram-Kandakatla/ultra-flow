@@ -78,7 +78,8 @@ body:not(.theme-sky) .sky{display:none}
 .sky i+i{left:calc(50% + 42vw*cos(var(--orbital-rotation)));top:calc(100% + 85vh*sin(var(--orbital-rotation)))}
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
-body{margin:0;background:linear-gradient(180deg,var(--bg-gradient-top) 0%,var(--bg-gradient-mid) 50%,var(--bg-gradient-bottom) 100%) fixed;color:var(--text-color);
+body{margin:0;background:linear-gradient(180deg,var(--bg-gradient-top) 0%,var(--bg-gradient-mid) 50%,var(--bg-gradient-bottom) 100%) fixed var(--bg-gradient-bottom);color:var(--text-color);
+  /* solid base color = the gradient's bottom: iOS Safari paints the area under its bottom toolbar with it (else black or white) */
   --glow:color-mix(in srgb,var(--accent) 22%,transparent);--amb:color-mix(in srgb,var(--accent) 26%,transparent);--link:color-mix(in srgb,var(--accent) var(--lk),var(--tx)); /* accent-derived: link = accent text pulled toward ink until readable */
   font:var(--fs-base)/1.55 var(--font-body);-webkit-font-smoothing:antialiased;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-inline:16px;padding-block:8px 12px;
