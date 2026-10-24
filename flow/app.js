@@ -131,7 +131,7 @@ function draw(){
     if(ds==='ring'){x.lineWidth=s*.09;x.stroke()}else x.fill();
     if(ds==='glossy'||ds==='gem'){const g=x.createLinearGradient(0,Y(i)-r,0,Y(i)+r);g.addColorStop(0,'#fff5');g.addColorStop(.45,'#fff0');g.addColorStop(1,'#0002');
       x.fillStyle=g;x.fill()} // convex shading over the color: lit top, shaded bottom, letter area left clean
-    if(k>=.7&&stats.letters!==false){x.fillStyle=ds==='ring'?C[c]:v('--panel');x.fillText(String.fromCharCode(65+c),X(i),Y(i)+s*.02)}}); // letter = non-color cue
+    if(k>=.7&&stats.letters===true){x.fillStyle=ds==='ring'?C[c]:v('--panel');x.fillText(String.fromCharCode(65+c),X(i),Y(i)+s*.02)}}); // letter = non-color cue
   for(const f of fx)if(f.k==='ring'){const p=(now-f.t0)/f.dur; // connection: ripple out of both dots
     x.globalAlpha=.7*(1-p);x.strokeStyle=C[f.c];x.lineWidth=s*.07;
     for(const i of [sol[f.c][0],sol[f.c].at(-1)]){x.beginPath();x.arc(X(i),Y(i),s*(.36+.45*ease(p)),0,7);x.stroke()}}
@@ -234,14 +234,12 @@ function tab(t){for(const b of $('tabs').children)b.setAttribute('aria-pressed',
   if(t==='profile')renderProfile();if(t==='shop')renderShop();$('home').scrollTop=0}
 $('tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(b)tab(b.dataset.tab)};
 $('toShop').onclick=()=>tab('shop');
-// Profile: points beside the fastest time on the hardest difficulty, then that difficulty's best time per shape.
-// A shape not yet cleared on it shows the hardest level it has cleared, as the next goal's context.
-const topClear=sh=>LEVELS.findLast(([,z])=>stats.best[sh+'-'+z]!=null);
-function renderProfile(){const [nm,z]=LEVELS.at(-1),t=sh=>stats.best[sh+'-'+z],done=Object.keys(SHAPES).filter(sh=>t(sh)!=null);
+// Profile: points beside the fastest time on the hardest difficulty, then the best time of every completion of it (one row per shape cleared).
+function renderProfile(){const [nm,z]=LEVELS.at(-1),t=sh=>+stats.best[sh+'-'+z],done=Object.keys(SHAPES).filter(sh=>stats.best[sh+'-'+z]!=null);
   $('profPts').textContent=+stats.points||0;$('profBestHead').textContent=`Best ${nm}`;
-  $('profBest').textContent=done.length?fmt(Math.min(...done.map(sh=>+t(sh)))):'—';$('bestsHead').textContent=`Best times · ${nm} ${z}×${z} (hardest)`;
-  $('bests').innerHTML=Object.keys(SHAPES).map(sh=>{const k=sh+'-'+z,h=topClear(sh),g=t(sh)!=null; // no Godlike clear: its hardest clear's time, dimmed
-    return `<li>${preview(sh)}<span>${sh}<small>${g?`${+stats.solved[k]||0} solved`:h?`Best on ${h[0]} · ${nm} not cleared yet`:'Not cleared yet'}</small></span><b${g?'':' class="dim"'}>${g?fmt(+t(sh)):h?fmt(+stats.best[sh+'-'+h[1]]):'—'}</b></li>`}).join('');
+  $('profBest').textContent=done.length?fmt(Math.min(...done.map(t))):'None yet';$('bestsHead').textContent=`Best times · ${nm} ${z}×${z} (hardest)`;
+  $('bests').innerHTML=done.length?done.map(sh=>`<li>${preview(sh)}<span>${sh}<small>${+stats.solved[sh+'-'+z]||0} solved</small></span><b>${fmt(t(sh))}</b></li>`).join('')
+    :`<li class="none">No ${nm} clears yet. Finish a ${z}×${z} board to set your first time here.</li>`;
   $('profTotal').textContent=`${Object.values(stats.solved).reduce((a,v)=>a+(+v||0),0)} puzzles solved in all`}
 // Shop tab: buying takes two taps (the first turns the button into a confirm); owned items equip in one.
 function renderShop(){const pts=+stats.points||0,now=skyAt(new Date().getHours());
@@ -270,7 +268,7 @@ const SKY=[[5,'nighttime'],[8,'sunrise'],[17,'daytime'],[20,'sunset'],[24,'night
   pinned=()=>SKY.some(([,s])=>s===stats.sky)&&stats.sky, // anything else (incl. 'auto') follows the clock
   setLook=()=>{const a=skyAt(new Date().getHours()),bg=use('bg');$('autoSw').className=a;
     document.body.className='theme-'+bg+(bg==='sky'?' '+(pinned()||a):'');$('skyPick').disabled=bg!=='sky';$('skyHint').hidden=bg==='sky'};
-document.querySelectorAll('.set-btn').forEach(b=>b.onclick=()=>{$('setForm').sky.value=pinned()||'auto';$('letters').checked=stats.letters!==false;$('setDlg').showModal()});
+document.querySelectorAll('.set-btn').forEach(b=>b.onclick=()=>{$('setForm').sky.value=pinned()||'auto';$('letters').checked=stats.letters===true;$('setDlg').showModal()});
 $('setForm').onchange=e=>{if(e.target.id==='letters')stats.letters=e.target.checked;else stats.sky=e.target.value;save();setLook();draw()};
 setLook();setInterval(setLook,60000);document.addEventListener('visibilitychange',setLook); // resumed apps catch up at once
 
@@ -285,8 +283,9 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
     paths[0]=[...sol[0]];check();const t1=total;paths[0]=[sol[0][0]];check();paths[0]=[...sol[0]].reverse();check();bad+=t1!==connVal()||total!==t1; // reconnecting pays nothing
     sec=k+5;paths=sol.map(s=>[...s]);check();
     bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||sol.length!==flows(N,n)||sol.some(s=>s.length>2*N/sol.length)||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
-  {const b=stats.best;stats.best={'Ring-9':40,'Ring-13':90,'Square-13':70,'Plus-5':9};bad+=topClear('Ring')[1]!==13||topClear('Plus')[1]!==5||topClear('Circle')!==undefined;
-    renderProfile();bad+=$('profBest').textContent!=='1:10'||!$('bests').textContent.includes('1:30')||!$('bests').textContent.includes('Best on Easy')||!$('bests').textContent.includes('0:09');stats.best=b} // profile: fastest Godlike, per-shape rows
+  {const b=stats.best,B=()=>$('bests').textContent;stats.best={'Ring-9':40,'Ring-13':90,'Square-13':70,'Plus-5':9};renderProfile(); // profile: Godlike clears only
+    bad+=$('profBest').textContent!=='1:10'||!B().includes('1:30')||!B().includes('1:10')||B().includes('Plus')||B().includes('0:09')||B().includes('0:40');
+    stats.best={'Plus-5':9};renderProfile();bad+=!B().includes('No Godlike clears yet')||$('profBest').textContent!=='None yet';stats.best=b}
   bad+=[4,5,7,8,16,17,19,20,23].map(skyAt)+''!=='nighttime,sunrise,sunrise,daytime,daytime,sunset,sunset,nighttime,nighttime';
   const keep=[stats.points,stats.own,stats.use];stats.own=[];stats.use={}; // shop: can't overspend, pays once, re-equips free
   stats.points=TIER.Rare-1;bad+=buy('bg','dunes')||stats.points!==TIER.Rare-1||use('bg')!=='classic';
