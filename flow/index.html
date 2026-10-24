@@ -96,7 +96,7 @@ header,.bar{display:flex;align-items:center;gap:8px}
 .stats span{font:700 var(--fs-num)/1 var(--font-display);letter-spacing:-.5px;transform-origin:left center}
 .bump{animation:bump var(--t-med) var(--spring)}
 @keyframes bump{40%{transform:scale(1.2)}}
-#pts,#de{color:var(--orange)} /* reward color; 22px bold is large text, so 3:1 is the bar */
+#pts{color:var(--orange)} /* reward color; 22px bold is large text, so 3:1 is the bar */
 #hintBtn{margin-left:auto}
 #wrap{flex:1;min-height:0;max-height:100vw;width:100%;display:grid;place-items:center} /* no overflow clip: the win pop grows past it.
   max-height: on tall phones the whole column centers instead of the board floating in a stretched gap */
@@ -137,7 +137,8 @@ dialog[open]::backdrop{animation:fade .32s cubic-bezier(.2,.8,.2,1)} /* literal:
 form{display:grid;gap:14px}
 h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .rec-line{margin:0;font-size:var(--fs-sm);color:var(--txm)}
-.rec-line.new{color:var(--green);font-weight:600}
+.win-bar{flex-direction:column;gap:2px} /* solved: wide Next pill with Change level under it, as in the reference */
+.win-bar .btn-primary{width:100%;min-height:52px;font-size:var(--fs-base)}
 .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .icon-btn{padding:0 12px}
 /* Settings: sky picker. Each swatch carries its sky's class, so it previews the real gradient. */
@@ -149,6 +150,8 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .skies input{margin:0;accent-color:var(--link)}
 .skies i{width:28px;height:28px;border-radius:50%;background:linear-gradient(var(--bg-gradient-top),var(--bg-gradient-mid),var(--bg-gradient-bottom))}
 .skies small{font-size:var(--fs-sm);color:var(--txm)}
+.opt{display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;min-height:48px;cursor:pointer}
+.opt input{width:20px;height:20px;margin:0;accent-color:var(--link)}.opt small{grid-column:2;font-size:var(--fs-sm);color:var(--txm)}
 /* Home: Play (pick a shape, then tap a level), Profile (points, hardest-level records) and Shop tabs. Shapes are drawn from the generator's masks. */
 .home{position:fixed;inset:0;z-index:5;overflow-y:auto;touch-action:pan-y;display:flex;flex-direction:column;align-items:center;gap:18px;
   padding-inline:16px;padding-block:calc(env(safe-area-inset-top,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 24px)}
@@ -189,6 +192,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .bests svg{width:28px;fill:var(--accent)}
 .bests b{font:700 var(--fs-md)/1 var(--font-display);font-variant-numeric:tabular-nums}
 .bests small{display:block;font-size:var(--fs-sm);color:var(--txm);font-variant-numeric:tabular-nums}
+.bests b.dim{color:var(--txm)}
 .bests b small{text-align:right;font:400 var(--fs-xs) var(--font-body);margin-top:3px}
 /* Shop: one tile per cosmetic, tier badge colored by rarity. Previews reuse the real background classes. */
 .shop{display:grid;gap:24px}
@@ -274,13 +278,12 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
   <section id="hud" class="card stats" aria-label="Game stats"><div><b>Time</b><span id="tm"></span></div><div><b>Score</b><span id="sc"></span></div><div><b>Points</b><span id="pts"></span></div><button class="btn btn-sample" id="hintBtn">Hint −10</button></section>
   <main id="wrap"><canvas id="cv" aria-label="Flow puzzle board"></canvas></main>
   <div class="bar"><span id="st" aria-live="polite"></span><button class="btn btn-ghost" id="solBtn">Solution</button><button class="btn btn-quiet" id="doneBtn">Done</button></div>
+  <div class="bar win-bar" id="winBar" hidden><button class="btn btn-primary" id="nextBtn">Next puzzle →</button><button class="btn btn-link" id="lvlBtn">Change level</button></div>
   <footer id="best"></footer>
 </div>
 <dialog id="dlg"><form method="dialog">
   <h2 id="dh"></h2>
-  <div class="stats" id="dsum"><div><b>Time</b><span id="dt"></span></div><div><b>Score</b><span id="ds"></span></div><div><b>Points</b><span id="de"></span></div></div>
-  <p class="rec-line" id="rec"></p>
-  <div class="row"><button class="btn btn-ghost" id="keepBtn" value=""></button><button class="btn btn-link" value="home">Change level</button><button class="btn btn-primary" id="goBtn" value="go" autofocus></button></div>
+  <div class="row"><button class="btn btn-ghost" id="keepBtn" value=""></button><button class="btn btn-link" value="home">Change level</button><button class="btn btn-primary" value="go" autofocus>New puzzle</button></div>
 </form></dialog>
 <dialog id="setDlg"><form method="dialog" id="setForm">
   <h2>Settings</h2>
@@ -292,6 +295,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
     <label><input type="radio" name="sky" value="sunset"><i class="sunset"></i>Sunset<small>5–8 PM</small></label>
     <label><input type="radio" name="sky" value="nighttime"><i class="nighttime"></i>Night<small>8 PM–5 AM</small></label>
   </fieldset>
+  <label class="opt"><input type="checkbox" id="letters">Letters on dots<small>On by default, so colors aren't the only way to tell pipes apart</small></label>
   <div class="row"><button class="btn btn-primary">Done</button></div>
 </form></dialog>
 <script src="app.js"></script>

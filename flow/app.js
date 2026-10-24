@@ -28,7 +28,7 @@ for(const z of [5,9,11]){stats.solved['Square-'+z]??=stats[z];stats.best['Square
 // Shop: cosmetics bought with points, priced by tier. Each category's first item is free and equipped until another is picked.
 const TIER={Free:0,Common:60,Rare:150,Epic:350,Legendary:800},
   SHOP={bg:['Backgrounds',[['classic','Classic','Free'],['ocean','Ocean','Common'],['forest','Forest','Common'],['dunes','Dunes','Rare'],['sakura','Sakura','Rare'],['aurora','Aurora','Epic'],['synth','Synthwave','Epic'],['sky','Time of day','Legendary']]],
-    dot:['Dots',[['glossy','Glossy','Free'],['flat','Flat','Common'],['ring','Ring','Rare'],['gem','Gem','Epic'],['star','Star','Legendary']]],
+    dot:['Dots',[['flat','Flat','Free'],['glossy','Glossy','Free'],['ring','Ring','Rare'],['gem','Gem','Epic'],['star','Star','Legendary']]], // Flat = the reference look
     win:['Win effects',[['wave','Wave','Free'],['ripple','Ripple','Common'],['confetti','Confetti','Rare'],['rainbow','Rainbow','Epic'],['fireworks','Fireworks','Legendary']]]},
   item=(cat,id)=>Object.hasOwn(SHOP,cat)&&SHOP[cat][1].find(([i])=>i===id),
   owned=(cat,id)=>!!item(cat,id)&&(TIER[item(cat,id)[2]]===0||stats.own.includes(cat+':'+id)),
@@ -88,6 +88,7 @@ function newGame(sh,z){
   shape=sh;n=z;M=maskOf(sh,n);cells=M.flatMap((m,i)=>m?[i]:[]);N=cells.length;sol=gen(n,M);
   dot=Array(n*n).fill(-1);sol.forEach((s,c)=>dot[s[0]]=dot[s.at(-1)]=c);
   paths=sol.map(()=>[]);won=0;cur=-1;sec=0;earned=0;newRec=false;hints=new Set();scored=new Set();total=0;stats.last=[sh,z];save();
+  $('winBar').hidden=true;$('solBtn').hidden=$('doneBtn').hidden=false;
   wasDone=[];fx=[];delete $('sc').dataset.v;play('spawn',null,MS.pop+MS.stagger*sol.length);resize(); // fx reset: old effects point at old colors
 }
 
@@ -125,11 +126,12 @@ function draw(){
   x.font=`600 ${s*(ds==='star'?.26:.36)}px ${v('--font-display')}`;x.textAlign='center';x.textBaseline='middle';
   dot.forEach((c,i)=>{if(c<0)return;const k=(el('spawn')-c*MS.stagger)/MS.pop, // new puzzle: dots pop in, staggered by color
       r=s*.36*(k>=1?1:k<=0?0:1+2.70158*(k-1)**3+1.70158*(k-1)**2);
-    if(r<=0)return;x.fillStyle=x.strokeStyle=C[c];x.beginPath();DOT[ds](X(i),Y(i),r);
+    if(r<=0)return;if(ds==='flat'&&!paths[c].includes(i)){x.fillStyle=C[c]+'38';Q(i)} // flat dots sit on a tinted tile, as in the reference
+    x.fillStyle=x.strokeStyle=C[c];x.beginPath();DOT[ds](X(i),Y(i),r);
     if(ds==='ring'){x.lineWidth=s*.09;x.stroke()}else x.fill();
     if(ds==='glossy'||ds==='gem'){const g=x.createLinearGradient(0,Y(i)-r,0,Y(i)+r);g.addColorStop(0,'#fff5');g.addColorStop(.45,'#fff0');g.addColorStop(1,'#0002');
       x.fillStyle=g;x.fill()} // convex shading over the color: lit top, shaded bottom, letter area left clean
-    if(k>=.7){x.fillStyle=ds==='ring'?C[c]:v('--panel');x.fillText(String.fromCharCode(65+c),X(i),Y(i)+s*.02)}}); // letter = non-color cue
+    if(k>=.7&&stats.letters!==false){x.fillStyle=ds==='ring'?C[c]:v('--panel');x.fillText(String.fromCharCode(65+c),X(i),Y(i)+s*.02)}}); // letter = non-color cue
   for(const f of fx)if(f.k==='ring'){const p=(now-f.t0)/f.dur; // connection: ripple out of both dots
     x.globalAlpha=.7*(1-p);x.strokeStyle=C[f.c];x.lineWidth=s*.07;
     for(const i of [sol[f.c][0],sol[f.c].at(-1)]){x.beginPath();x.arc(X(i),Y(i),s*(.36+.45*ease(p)),0,7);x.stroke()}}
@@ -146,7 +148,7 @@ function draw(){
   x.globalAlpha=1;
 }
 // Dot shapes (Shop): a path around the dot center; ring is stroked, the rest filled.
-const DOT={glossy:(X,Y,r)=>x.arc(X,Y,r,0,7), flat:(X,Y,r)=>x.arc(X,Y,r,0,7), ring:(X,Y,r)=>x.arc(X,Y,r*.84,0,7),
+const DOT={glossy:(X,Y,r)=>x.arc(X,Y,r,0,7), flat:(X,Y,r)=>x.arc(X,Y,r*.88,0,7), ring:(X,Y,r)=>x.arc(X,Y,r*.84,0,7),
   gem:(X,Y,r)=>{for(let k=0;k<4;k++)x.lineTo(X+Math.sin(k*Math.PI/2)*r*1.2,Y-Math.cos(k*Math.PI/2)*r*1.2);x.closePath()},
   star:(X,Y,r)=>{for(let k=0;k<10;k++){const a=k*Math.PI/5,q=k%2?r*.62:r*1.3;x.lineTo(X+Math.sin(a)*q,Y-Math.cos(a)*q)}x.closePath()}},
   rnd=j=>{const v=Math.sin(j*12.9898+78.233)*43758.5453;return v-Math.floor(v)}; // fixed per-index randomness: particles keep their paths frame to frame
@@ -161,8 +163,8 @@ function check(){
     const k=key();stats.solved[k]=(stats.solved[k]||0)+1;newRec=!(stats.best[k]<=sec);if(newRec)stats.best[k]=sec;save();
     const wf=use('win'),burst=wf==='confetti'||wf==='fireworks',dur=burst?MS.burst:MS.wave*(2*n-2)+MS.pop;
     pulse(cv,'pop');play(burst?wf:'win',null,dur,MS.lift); // board pops out, then the equipped win effect plays
-    setTimeout(()=>won===1&&openDlg(),RM.matches?400:MS.lift+dur+150)}
-  $('st').textContent=won===2?'Solution shown. Tap Done for a new one':won?`Solved in ${fmt(sec)} · +${earned} points`:`Flows ${f}/${sol.length} · Pipe ${Math.round(filled*100/N)}%`;
+    setTimeout(()=>won===1&&showWin(),RM.matches?400:MS.lift+dur+150)}
+  $('st').textContent=won===2?'Solution shown. Tap Done for a new one':won?`Connected · ${fmt(sec)} · +${earned} points · ${newRec?'new record':'record '+fmt(stats.best[key()])}`:`Flows ${f}/${sol.length} · Pipe ${Math.round(filled*100/N)}%`;
   $('st').className=won===1?'win':'';$('best').textContent=`${shape} · ${levelName(n)} ${n}×${n} · solved ${stats.solved[key()]||0}`;hud();
 }
 function hud(){$('tm').textContent=fmt(sec);setNum('sc',total);setNum('pts',stats.points)}
@@ -201,13 +203,12 @@ cv.onpointermove=e=>{
 cv.onpointerup=cv.onpointercancel=()=>{cur=-1;draw()};
 addEventListener('resize',resize);
 
-const openDlg=$('doneBtn').onclick=()=>{
-  $('dh').textContent=['Leave this puzzle?','Puzzle solved!','Solution shown'][won];
-  $('dsum').hidden=$('rec').hidden=won!==1;$('dt').textContent=fmt(sec);countUp($('ds'),0,total);countUp($('de'),0,earned,v=>'+'+v);
-  $('rec').textContent=newRec?`New record for ${shape} ${levelName(n)}`:`Record ${fmt(stats.best[key()]??0)}`;$('rec').className='rec-line'+(newRec?' new':'');
-  $('keepBtn').textContent=won?'View board':'Keep playing';$('goBtn').textContent=won===1?'Next puzzle →':'New puzzle';
+$('doneBtn').onclick=()=>{ // leaving mid-puzzle or after Solution; a real win gets the inline bar instead
+  $('dh').textContent=won?'Solution shown':'Leave this puzzle?';$('keepBtn').textContent=won?'View board':'Keep playing';
   $('dlg').returnValue='';if(!$('dlg').open)$('dlg').showModal();
 };
+function showWin(){$('solBtn').hidden=$('doneBtn').hidden=true;$('winBar').hidden=false;$('nextBtn').focus()}
+$('nextBtn').onclick=()=>newGame(shape,n);$('lvlBtn').onclick=()=>showHome();
 $('dlg').onclose=()=>{const r=$('dlg').returnValue;if(r==='go')newGame(shape,n);if(r==='home')showHome()};
 $('hintBtn').onclick=()=>{
   if(won)return;
@@ -239,8 +240,8 @@ const topClear=sh=>LEVELS.findLast(([,z])=>stats.best[sh+'-'+z]!=null);
 function renderProfile(){const [nm,z]=LEVELS.at(-1),t=sh=>stats.best[sh+'-'+z],done=Object.keys(SHAPES).filter(sh=>t(sh)!=null);
   $('profPts').textContent=+stats.points||0;$('profBestHead').textContent=`Best ${nm}`;
   $('profBest').textContent=done.length?fmt(Math.min(...done.map(sh=>+t(sh)))):'—';$('bestsHead').textContent=`Best times · ${nm} ${z}×${z} (hardest)`;
-  $('bests').innerHTML=Object.keys(SHAPES).map(sh=>{const k=sh+'-'+z,h=topClear(sh);
-    return `<li>${preview(sh)}<span>${sh}<small>${t(sh)!=null?`${+stats.solved[k]||0} solved`:h?`Not cleared yet · hardest: ${h[0]}`:'Not cleared yet'}</small></span><b>${t(sh)!=null?fmt(+t(sh)):'—'}</b></li>`}).join('');
+  $('bests').innerHTML=Object.keys(SHAPES).map(sh=>{const k=sh+'-'+z,h=topClear(sh),g=t(sh)!=null; // no Godlike clear: its hardest clear's time, dimmed
+    return `<li>${preview(sh)}<span>${sh}<small>${g?`${+stats.solved[k]||0} solved`:h?`Best on ${h[0]} · ${nm} not cleared yet`:'Not cleared yet'}</small></span><b${g?'':' class="dim"'}>${g?fmt(+t(sh)):h?fmt(+stats.best[sh+'-'+h[1]]):'—'}</b></li>`}).join('');
   $('profTotal').textContent=`${Object.values(stats.solved).reduce((a,v)=>a+(+v||0),0)} puzzles solved in all`}
 // Shop tab: buying takes two taps (the first turns the button into a confirm); owned items equip in one.
 function renderShop(){const pts=+stats.points||0,now=skyAt(new Date().getHours());
@@ -269,8 +270,8 @@ const SKY=[[5,'nighttime'],[8,'sunrise'],[17,'daytime'],[20,'sunset'],[24,'night
   pinned=()=>SKY.some(([,s])=>s===stats.sky)&&stats.sky, // anything else (incl. 'auto') follows the clock
   setLook=()=>{const a=skyAt(new Date().getHours()),bg=use('bg');$('autoSw').className=a;
     document.body.className='theme-'+bg+(bg==='sky'?' '+(pinned()||a):'');$('skyPick').disabled=bg!=='sky';$('skyHint').hidden=bg==='sky'};
-document.querySelectorAll('.set-btn').forEach(b=>b.onclick=()=>{$('setForm').sky.value=pinned()||'auto';$('setDlg').showModal()});
-$('setForm').onchange=e=>{stats.sky=e.target.value;save();setLook()};
+document.querySelectorAll('.set-btn').forEach(b=>b.onclick=()=>{$('setForm').sky.value=pinned()||'auto';$('letters').checked=stats.letters!==false;$('setDlg').showModal()});
+$('setForm').onchange=e=>{if(e.target.id==='letters')stats.letters=e.target.checked;else stats.sky=e.target.value;save();setLook();draw()};
 setLook();setInterval(setLook,60000);document.addEventListener('visibilitychange',setLook); // resumed apps catch up at once
 
 const [ls,lz]=stats.last||[];
@@ -285,7 +286,7 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
     sec=k+5;paths=sol.map(s=>[...s]);check();
     bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||sol.length!==flows(N,n)||sol.some(s=>s.length>2*N/sol.length)||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
   {const b=stats.best;stats.best={'Ring-9':40,'Ring-13':90,'Square-13':70,'Plus-5':9};bad+=topClear('Ring')[1]!==13||topClear('Plus')[1]!==5||topClear('Circle')!==undefined;
-    renderProfile();bad+=$('profBest').textContent!=='1:10'||!$('bests').textContent.includes('1:30')||!$('bests').textContent.includes('hardest: Easy');stats.best=b} // profile: fastest Godlike, per-shape rows
+    renderProfile();bad+=$('profBest').textContent!=='1:10'||!$('bests').textContent.includes('1:30')||!$('bests').textContent.includes('Best on Easy')||!$('bests').textContent.includes('0:09');stats.best=b} // profile: fastest Godlike, per-shape rows
   bad+=[4,5,7,8,16,17,19,20,23].map(skyAt)+''!=='nighttime,sunrise,sunrise,daytime,daytime,sunset,sunset,nighttime,nighttime';
   const keep=[stats.points,stats.own,stats.use];stats.own=[];stats.use={}; // shop: can't overspend, pays once, re-equips free
   stats.points=TIER.Rare-1;bad+=buy('bg','dunes')||stats.points!==TIER.Rare-1||use('bg')!=='classic';
@@ -294,4 +295,5 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   for(const cat in SHOP)for(const [id] of SHOP[cat][1]){stats.points=1e4;bad+=!buy(cat,id)||use(cat)!==id; // every cosmetic equips and draws
     fx=[{k:id==='confetti'||id==='fireworks'?id:'win',t0:performance.now()-400,dur:MS.burst}];draw()}
   [stats.points,stats.own,stats.use]=keep;fx=[];setLook();draw();
+  showWin();bad+=$('winBar').hidden||!$('doneBtn').hidden;newGame(shape,n);bad+=!$('winBar').hidden||$('doneBtn').hidden; // win bar swaps in, a new board swaps it out
   console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)}
