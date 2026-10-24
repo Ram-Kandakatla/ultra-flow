@@ -205,16 +205,14 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .wallet{margin:0;text-align:center;font-size:var(--fs-sm)}
 .wallet b{font:700 var(--fs-lg) var(--font-display);color:var(--orange)}
 .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-/* Preview: a small ? at each tile's top right (the icon works too). Background previews fade the shop out and name what's showing. */
+/* Preview: a small ? at each tile's top right (the icon works too) opens a demo board on the game screen. */
 .peek-btn{position:absolute;top:8px;right:8px;width:22px;height:22px;padding:0;display:grid;place-items:center;border-radius:50%;border:1px solid var(--bmed);
   background:var(--s2);color:var(--txm);font:600 var(--fs-xs)/1 var(--font-body);cursor:pointer;transition:color var(--t-fast),border-color var(--t-fast)}
 .peek-btn::after{content:'';position:absolute;inset:-11px} /* 44px tap target around the tiny circle */
 .peek-btn:hover{color:var(--tx);border-color:var(--link)}
 .pv[data-pv]{cursor:pointer}
-.home.peek>*{opacity:0;pointer-events:none;transition:opacity .3s}
-.home.peek::after{content:attr(data-peek);position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 32px);translate:-50%;padding:10px 18px;border-radius:999px;
-  background:var(--surface);color:var(--tx);border:.5px solid var(--bmed);font:600 var(--fs-sm) var(--font-body);white-space:nowrap;pointer-events:none}
-#game:not(.demo) #demoBar,#game.demo :is(#hud,.bar:has(#st),#winBar,#best){display:none!important} /* demo board: just its line and the way back */
+#game:not(.demo) #demoBar,#game.demo :is(.bar:has(#st),#winBar,#best),#game.demo:not(.demo-bg) #hud,.demo-bg #againBtn{display:none!important}
+/* demo board: its line and the way back; a background preview also keeps the HUD, so the panels show over it */
 .item{position:relative;display:grid;justify-items:center;align-content:start;gap:8px;padding:16px 10px 10px;text-align:center}
 .item:has(.t-Legendary){border-color:color-mix(in srgb,#f59e0b 65%,transparent)}
 .item b{font:600 var(--fs-base)/1.2 var(--font-display)}

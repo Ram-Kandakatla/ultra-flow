@@ -166,8 +166,8 @@ function check(){
     const wf=look('win'),burst=wf==='confetti'||wf==='fireworks',dur=burst?MS.burst:MS.wave*(2*n-2)+MS.pop;
     pulse(cv,'pop');play(burst?wf:'win',null,dur,MS.lift); // board pops out, then the equipped win effect plays
     if(!demo)setTimeout(()=>won===1&&showWin(),RM.matches?400:MS.lift+dur+150)}
-  if(demo){const nm=item(demo.cat,demo.id)[1];return $('demoSt').textContent=demo.cat==='dot'?(won?`${nm} dots, connected`:`Join the two dots to try ${nm}`)
-    :`${nm} on a solved board${RM.matches?' (effects are off under Reduce Motion)':''}`}
+  if(demo){const nm=item(demo.cat,demo.id)[1];hud();return $('demoSt').textContent=demo.cat==='dot'?(won?`${nm} dots, connected`:`Join the two dots to try ${nm}`)
+    :demo.cat==='bg'?`${nm} preview`:`${nm} on a solved board${RM.matches?' (effects are off under Reduce Motion)':''}`}
   $('st').textContent=won===2?'Solution shown. Tap Done for a new one':won?`Connected · ${fmt(sec)} · +${earned} points · ${newRec?'new record':'record '+fmt(stats.best[key()])}`:`Flows ${f}/${sol.length} · Pipe ${Math.round(filled*100/N)}%`;
   $('st').className=won===1?'win':'';$('best').textContent=`${shape} · ${levelName(n)} ${n}×${n} · solved ${stats.solved[key()]||0}`;hud();
 }
@@ -215,7 +215,7 @@ function showWin(){$('solBtn').hidden=$('doneBtn').hidden=true;$('winBar').hidde
 $('nextBtn').onclick=()=>newGame(shape,n);$('lvlBtn').onclick=()=>showHome();
 $('dlg').onclose=()=>{const r=$('dlg').returnValue;if(r==='go')newGame(shape,n);if(r==='home')showHome()};
 $('hintBtn').onclick=()=>{
-  if(won)return;
+  if(won||demo)return; // a background preview shows the HUD, but its hint isn't for sale
   const cand=sol.map((g,c)=>c).filter(c=>!hints.has(c)&&!(paths[c].length===sol[c].length&&sol[c].every(i=>paths[c].includes(i)))),
     c=cand[Math.random()*cand.length|0];
   if(c===undefined)return $('st').textContent='Every pipe already has a hint';
@@ -251,27 +251,26 @@ function renderShop(){const pts=+stats.points||0,now=skyAt(new Date().getHours()
     `<section><h2 class="eyebrow">${title}</h2><div class="items">${list.map(([id,name,tier])=>{const own=owned(cat,id),on=use(cat)===id,p=TIER[tier];
       return `<div class="item card"><button class="peek-btn" data-pv="${cat}:${id}" aria-label="Preview ${name}" title="Preview">?</button><i class="pv pv-${cat} ${cat==='bg'?'theme-'+id+(id==='sky'?' '+now:''):cat+'-'+id}" data-pv="${cat}:${id}" aria-hidden="true"></i><b id="it-${cat}-${id}">${name}</b><span class="tier t-${tier}">${tier}</span>`+
         `<button class="btn${on?' in-use':' btn-primary'}" data-cat="${cat}" data-id="${id}" aria-describedby="it-${cat}-${id}"${on||!own&&pts<p?' aria-disabled="true"':''}>${on?'In use':own?'Use':'Buy · '+p}</button></div>`}).join('')}</div></section>`).join('')}
-$('tab-shop').onclick=e=>{const v=e.target.closest('[data-pv]');if(v){const [c,i]=v.dataset.pv.split(':');return c==='bg'?peek(i):startDemo(c,i)} // the ? or the icon previews
+$('tab-shop').onclick=e=>{const v=e.target.closest('[data-pv]');if(v){const [c,i]=v.dataset.pv.split(':');return startDemo(c,i)} // the ? or the icon previews
   const b=e.target.closest('button[data-cat]');if(!b||b.getAttribute('aria-disabled'))return;
   const {cat,id}=b.dataset,at=()=>$('tab-shop').querySelector(`[data-cat="${cat}"][data-id="${id}"]`);
   if(!owned(cat,id)&&!b.dataset.sure){renderShop();const c=at();c.dataset.sure=1;c.textContent='Tap again to buy';c.focus();return}
   buy(cat,id);renderShop();at().focus()};
-// Shop previews. Background: the page wears it for 4.5s while the shop fades out (a tap ends it early).
-// Dots and win effects: the game screen runs a 2x2 demo board while the real board waits in `saved`; Back returns to the same shop spot.
-let peekBg=null,peekT;
-function peek(id){clearTimeout(peekT);peekBg=id;document.body.style.transitionDuration='.4s'; // not the 3s fade: the preview is short
-  $('home').dataset.peek=`${item('bg',id)[1]} preview`;$('home').classList.add('peek');setLook();peekT=setTimeout(unpeek,4500)}
-function unpeek(){clearTimeout(peekT);peekBg=null;$('home').classList.remove('peek');setLook();setTimeout(()=>peekBg||(document.body.style.transitionDuration=''),400)}
-$('home').onclick=e=>{if(peekBg&&e.target===e.currentTarget)unpeek()};
+// Shop previews: the game screen runs a demo board while the real board waits in `saved`; Back returns to the same shop spot.
+// Dots: a 2x2 to connect. Win effects: a 4x4 that solves itself. Backgrounds: the page wears it for 4.5s behind a half-played 4x4 and the HUD.
+const DEMO4=[[0,1,2,3,7,11],[4,5,6,10],[12,8,9,13,14,15]]; // three pipes filling a 4x4
 function startDemo(cat,id){
   if(!demo){saved={shape,n,M,N,cells,dot,sol,paths,won,sec,hints,earned,scored,total,newRec,wasDone};demo={top:$('home').scrollTop}}
   clearTimeout(demo.auto);Object.assign(demo,{cat,id});
-  n=2;M=[1,1,1,1];cells=[0,1,2,3];N=4;sol=[[0,1,3]];dot=[0,-1,-1,0];paths=[[]];won=0;cur=-1;sec=total=0;hints=new Set();scored=new Set();wasDone=[];fx=[];
-  $('home').hidden=true;$('game').inert=false;$('game').classList.add('demo');play('spawn',null,MS.pop);resize();
-  if(cat==='win')demo.auto=setTimeout(()=>{paths=[[...sol[0]]];draw();check()},700)} // win effects play on their own
+  sol=cat==='dot'?[[0,1,3]]:DEMO4;n=cat==='dot'?2:4;N=n*n;M=Array(N).fill(1);cells=[...M.keys()];dot=Array(N).fill(-1);sol.forEach((s,c)=>dot[s[0]]=dot[s.at(-1)]=c);
+  paths=sol.map((s,c)=>cat==='bg'&&c<2?[...s]:[]);wasDone=paths.map(p=>p.length>1);won=0;cur=-1;sec=total=0;hints=new Set();scored=new Set();fx=[];
+  if(cat==='bg'){document.body.style.transitionDuration='.4s';setLook()} // not the 3s fade: the preview is short
+  $('home').hidden=true;$('game').inert=false;$('game').className='demo demo-'+cat;delete $('sc').dataset.v;play('spawn',null,MS.pop+MS.stagger*sol.length);resize();
+  demo.auto=cat==='bg'?setTimeout(endDemo,4500):cat==='win'&&setTimeout(()=>{paths=sol.map(s=>[...s]);draw();check()},700)} // win effects play on their own
 function endDemo(){const {cat,id,top,auto}=demo;clearTimeout(auto);demo=null;
   ({shape,n,M,N,cells,dot,sol,paths,won,sec,hints,earned,scored,total,newRec,wasDone}=saved);fx=[];cur=-1;
-  $('game').classList.remove('demo');delete $('sc').dataset.v;resize();
+  if(cat==='bg'){setLook();setTimeout(()=>demo?.cat==='bg'||(document.body.style.transitionDuration=''),400)}
+  $('game').className='';delete $('sc').dataset.v;resize();
   $('home').hidden=false;$('game').inert=true;tab('shop');$('home').scrollTop=top;
   $('tab-shop').querySelector(`.peek-btn[data-pv="${cat}:${id}"]`)?.focus({preventScroll:true})}
 $('againBtn').onclick=()=>startDemo(demo.cat,demo.id);$('backBtn').onclick=endDemo;
@@ -290,7 +289,7 @@ new MutationObserver(syncTheme).observe(root,{attributes:true,attributeFilter:['
 // until the Dark mode switch or Settings picks one, saved with the stats. Settings' sky picker only works with Time of day equipped.
 const SKY=[[5,'nighttime'],[8,'sunrise'],[17,'daytime'],[20,'sunset'],[24,'nighttime']], skyAt=h=>SKY.find(([e])=>h<e)[1], // [hour it ends, sky]
   pinned=()=>SKY.some(([,s])=>s===stats.sky)&&stats.sky, // anything else (incl. 'auto') follows the clock
-  setLook=()=>{const a=skyAt(new Date().getHours()),bg=peekBg||use('bg'),c='theme-'+bg+(bg==='sky'?' '+(pinned()||a):'');$('autoSw').className=a;
+  setLook=()=>{const a=skyAt(new Date().getHours()),bg=look('bg'),c='theme-'+bg+(bg==='sky'?' '+(pinned()||a):'');$('autoSw').className=a;
     document.body.className=c;$('skyPick').disabled=bg!=='sky';$('skyHint').hidden=bg==='sky';
     for(const id of ['edgeT','edgeB']){const e=$(id).cloneNode();e.className='edge '+c;$(id).replaceWith(e)} // fresh edge strips: iOS Safari re-tints its bars
     const top=getComputedStyle($('edgeT')).backgroundColor;document.querySelectorAll('meta[name=theme-color]').forEach(m=>m.content=top)}; // older iOS and Android read theme-color
@@ -326,6 +325,8 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   {const p=stats.points,s0=sol,sv=JSON.stringify(stats.solved);startDemo('dot','star');paths=[[0,1,3]];check(); // shop demo: wins, pays nothing, gives the real board back
     bad+=n!==2||!won||look('dot')!=='star'||stats.points!==p||JSON.stringify(stats.solved)!==sv||$('demoSt').textContent!=='Star dots, connected';
     endDemo();bad+=sol!==s0||look('dot')!==use('dot')||$('home').hidden||$('tab-shop').hidden;
-    peek('ocean');bad+=!document.body.classList.contains('theme-ocean');unpeek();bad+=document.body.classList.contains('theme-ocean');tab('play')}
+    startDemo('win','rainbow');bad+=n!==4||new Set(sol.flat()).size!==16||won;paths=sol.map(s=>[...s]);check();bad+=!won||stats.points!==p;endDemo(); // 4x4 win demo
+    startDemo('bg','ocean');$('hintBtn').click();bad+=!document.body.classList.contains('theme-ocean')||n!==4||won||$('demoSt').textContent!=='Ocean preview'||stats.points!==p||hints.size;
+    endDemo();bad+=document.body.classList.contains('theme-ocean')||sol!==s0;tab('play')}
   showWin();bad+=$('winBar').hidden||!$('doneBtn').hidden;newGame(shape,n);bad+=!$('winBar').hidden||$('doneBtn').hidden; // win bar swaps in, a new board swaps it out
   console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)}
