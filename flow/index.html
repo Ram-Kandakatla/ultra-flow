@@ -110,7 +110,7 @@ header,.bar{display:flex;align-items:center;gap:8px}
 canvas{touch-action:none;border-radius:var(--rl);filter:drop-shadow(0 10px 12px var(--glow)) drop-shadow(0 0 36px var(--amb))} /* lift + ambient halo, both follow the board's shape */
 .pop{animation:pop 420ms var(--spring)} /* keep in sync with MS.lift */
 @keyframes pop{45%{transform:scale(var(--pop,1.2));filter:drop-shadow(0 22px 22px var(--glow)) drop-shadow(0 0 36px var(--amb))}} /* --pop set per layout in resize() */
-#st{flex:1;min-width:0;font-size:var(--fs-sm);line-height:1.35;font-variant-numeric:tabular-nums}
+#st,#demoSt{flex:1;min-width:0;font-size:var(--fs-sm);line-height:1.35;font-variant-numeric:tabular-nums}
 #st.win{font-weight:600}
 footer{font:600 var(--fs-xs)/1.4 var(--font-body);text-transform:uppercase;letter-spacing:.12em;font-variant-numeric:tabular-nums}
 footer::before{content:'';display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--accent);vertical-align:1px}
@@ -204,7 +204,17 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .wallet{margin:0;text-align:center;font-size:var(--fs-sm)}
 .wallet b{font:700 var(--fs-lg) var(--font-display);color:var(--orange)}
 .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.item{display:grid;justify-items:center;align-content:start;gap:8px;padding:16px 10px 10px;text-align:center}
+/* Preview: a small ? at each tile's top right (the icon works too). Background previews fade the shop out and name what's showing. */
+.peek-btn{position:absolute;top:8px;right:8px;width:22px;height:22px;padding:0;display:grid;place-items:center;border-radius:50%;border:1px solid var(--bmed);
+  background:var(--s2);color:var(--txm);font:600 var(--fs-xs)/1 var(--font-body);cursor:pointer;transition:color var(--t-fast),border-color var(--t-fast)}
+.peek-btn::after{content:'';position:absolute;inset:-11px} /* 44px tap target around the tiny circle */
+.peek-btn:hover{color:var(--tx);border-color:var(--link)}
+.pv[data-pv]{cursor:pointer}
+.home.peek>*{opacity:0;pointer-events:none;transition:opacity .3s}
+.home.peek::after{content:attr(data-peek);position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 32px);translate:-50%;padding:10px 18px;border-radius:999px;
+  background:var(--surface);color:var(--tx);border:.5px solid var(--bmed);font:600 var(--fs-sm) var(--font-body);white-space:nowrap;pointer-events:none}
+#game:not(.demo) #demoBar,#game.demo :is(#hud,.bar:has(#st),#winBar,#best){display:none!important} /* demo board: just its line and the way back */
+.item{position:relative;display:grid;justify-items:center;align-content:start;gap:8px;padding:16px 10px 10px;text-align:center}
 .item:has(.t-Legendary){border-color:color-mix(in srgb,#f59e0b 65%,transparent)}
 .item b{font:600 var(--fs-base)/1.2 var(--font-display)}
 .item .btn{width:100%;padding:0 10px}
@@ -284,6 +294,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
   <section id="hud" class="card stats" aria-label="Game stats"><div><b>Time</b><span id="tm"></span></div><div><b>Score</b><span id="sc"></span></div><div><b>Points</b><span id="pts"></span></div><button class="btn btn-sample" id="hintBtn">Hint −10</button></section>
   <main id="wrap"><canvas id="cv" aria-label="Flow puzzle board"></canvas></main>
   <div class="bar"><span id="st" aria-live="polite"></span><button class="btn btn-ghost" id="solBtn">Solution</button><button class="btn btn-quiet" id="doneBtn">Done</button></div>
+  <div class="bar" id="demoBar"><span id="demoSt" aria-live="polite"></span><button class="btn btn-ghost" id="againBtn">Again</button><button class="btn btn-primary" id="backBtn">← Back to shop</button></div>
   <div class="bar win-bar" id="winBar" hidden><button class="btn btn-primary" id="nextBtn">Next puzzle →</button><button class="btn btn-link" id="lvlBtn">Change level</button></div>
   <footer id="best"></footer>
 </div>
