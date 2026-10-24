@@ -40,20 +40,41 @@
   --tx:#f0efe9;--txm:#9a9a94;--green:#4ec668;--blue:#5fa8f5;--bbg:#0d2238;--orange:#f5a742;--glow:rgba(255,140,60,.22);--amb:rgba(255,140,60,.18);
   --p0:#ff6b6b;--p1:#5fa8f5;--p2:#4ec668;--p3:#f5d142;--p4:#f5a742;--p5:#3fd0e0;--p6:#f062c0;--p7:#a98bff;--p8:#b5dc5a;--p9:#c9935f;--p10:#ffadc6;--p11:#9aa3ad;--p12:#f4f1ea;--p13:#3eea3e;--p14:#d445ea;--p15:#9addb1;--p16:#f4e89a;--p17:#c2a0df;--p18:#dc5a86;
   color-scheme:dark}
+/* Sky: the page background follows the time of day (class on body, set by app.js; a sky can be pinned in Settings).
+   Dark mode still only re-colors the cards and board; text sitting straight on the sky uses --text-color.
+   Registered so the 3s transitions actually blend the gradient and swing the sun/moon along their arc.
+   --orbital-rotation: 0 = left horizon, 90deg = overhead, 180deg = right horizon; the moon rides opposite the sun. */
+@property --bg-gradient-top{syntax:'<color>';inherits:true;initial-value:#0f2027}
+@property --bg-gradient-mid{syntax:'<color>';inherits:true;initial-value:#203a43}
+@property --bg-gradient-bottom{syntax:'<color>';inherits:true;initial-value:#2c5364}
+@property --orbital-rotation{syntax:'<angle>';inherits:true;initial-value:140deg}
+:root{--text-color:#eceff1;--celestial-color:#f5f5f5;--celestial-shadow:rgba(255,255,255,.4)}
+.sunrise{--bg-gradient-top:#ff7e5f;--bg-gradient-mid:#feb47b;--bg-gradient-bottom:#ffeccc;--text-color:#2c3e50;--celestial-color:#fffcfa;--celestial-shadow:rgba(255,230,200,.6);--orbital-rotation:15deg} /* 5AM-8AM */
+.daytime{--bg-gradient-top:#56ccf2;--bg-gradient-mid:#4ea8de;--bg-gradient-bottom:#2f80ed;--text-color:#fff;--celestial-color:#fffde6;--celestial-shadow:rgba(255,253,230,.8);--orbital-rotation:80deg} /* 8AM-5PM */
+.sunset{--bg-gradient-top:#9442fe;--bg-gradient-mid:#b83b5e;--bg-gradient-bottom:#f08a5d;--text-color:#ffcad4;--celestial-color:#ffeedd;--celestial-shadow:rgba(240,138,93,.6);--orbital-rotation:165deg} /* 5PM-8PM */
+.nighttime{--bg-gradient-top:#050b14;--bg-gradient-mid:#101f32;--bg-gradient-bottom:#1a2a3a;--text-color:#e0e6ed;--celestial-color:#f4f5f7;--celestial-shadow:rgba(255,255,255,.2);--orbital-rotation:260deg} /* 8PM-5AM: sun down, moon up */
+:is(.daytime,.sunset) :is(header,#st,#solBtn,footer,.home .eyebrow,.pts-line){text-shadow:0 1px 3px rgba(0,0,0,.35)} /* light text on the pale ends of those skies */
+.sky{position:fixed;inset:0;z-index:-1;pointer-events:none} /* behind everything; the transparent home screen shows it too */
+.sky i{position:absolute;width:80px;height:80px;margin:-40px;border-radius:50%;background:var(--celestial-color);box-shadow:0 0 40px var(--celestial-shadow);
+  left:calc(50% - 42vw*cos(var(--orbital-rotation)));top:calc(100% - 85vh*sin(var(--orbital-rotation)));transition:background-color 3s ease,box-shadow 3s ease} /* elliptical arc: stays on screen on phones too */
+.sky i+i{left:calc(50% + 42vw*cos(var(--orbital-rotation)));top:calc(100% + 85vh*sin(var(--orbital-rotation)))}
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
-body{margin:0;background:var(--bg);color:var(--tx);font:var(--fs-base)/1.55 var(--font-body);-webkit-font-smoothing:antialiased;
+body{margin:0;background:linear-gradient(180deg,var(--bg-gradient-top) 0%,var(--bg-gradient-mid) 50%,var(--bg-gradient-bottom) 100%) fixed;color:var(--text-color);
+  font:var(--fs-base)/1.55 var(--font-body);-webkit-font-smoothing:antialiased;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-inline:16px;padding-block:8px 12px;
-  touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:background .2s,color .2s}
+  touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+  transition:--bg-gradient-top 3s ease-in-out,--bg-gradient-mid 3s ease-in-out,--bg-gradient-bottom 3s ease-in-out,--orbital-rotation 3s cubic-bezier(.4,0,.2,1),color 3s ease-in-out}
 @media (prefers-reduced-motion:reduce){*,::backdrop{animation-duration:.001ms!important;animation-delay:0s!important;transition-duration:.001ms!important}}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
 [hidden]{display:none!important}
 #game{display:contents} /* wrapper only for inert while home is up; its children stay in body's layout */
+#game[inert]{visibility:hidden} /* the home screen is see-through (sky behind it), so hide the waiting board */
 header,.card,#wrap,.bar,footer{width:100%;max-width:var(--col)} /* one shared column edge, board included */
 header,.bar{display:flex;align-items:center;gap:8px}
 .brand{display:flex;align-items:center;gap:8px;margin:0 auto 0 0;font:700 var(--fs-lg)/1.15 var(--font-display);letter-spacing:-.4px}
 .brand svg{color:var(--orange);flex-shrink:0}
-.card{background:var(--surface);border:.5px solid var(--bmed);border-radius:var(--rl);transition:background .2s}
+.card{background:var(--surface);color:var(--tx);border:.5px solid var(--bmed);border-radius:var(--rl);transition:background .2s}
 #hud{align-items:center;flex-wrap:wrap;row-gap:10px;padding:10px 14px}
 .stats{display:flex;gap:18px;font-variant-numeric:tabular-nums}
 .stats div{display:grid;gap:2px}
@@ -68,20 +89,21 @@ header,.bar{display:flex;align-items:center;gap:8px}
 canvas{touch-action:none;border-radius:var(--rl);filter:drop-shadow(0 10px 12px var(--glow)) drop-shadow(0 0 36px var(--amb))} /* lift + ambient halo, both follow the board's shape */
 .pop{animation:pop 420ms var(--spring)} /* keep in sync with MS.lift */
 @keyframes pop{45%{transform:scale(var(--pop,1.2));filter:drop-shadow(0 22px 22px var(--glow)) drop-shadow(0 0 36px var(--amb))}} /* --pop set per layout in resize() */
-#st{flex:1;min-width:0;font-size:var(--fs-sm);line-height:1.35;color:var(--txm);font-variant-numeric:tabular-nums;transition:color var(--t-med)}
-#st.win{color:var(--green);font-weight:600}
-footer{font-size:var(--fs-sm);color:var(--txm);font-variant-numeric:tabular-nums}
+#st{flex:1;min-width:0;font-size:var(--fs-sm);line-height:1.35;font-variant-numeric:tabular-nums}
+#st.win{font-weight:600}
+footer{font-size:var(--fs-sm);font-variant-numeric:tabular-nums}
 .btn{min-height:44px;padding:0 16px;font:500 var(--fs-sm) var(--font-body);border-radius:var(--r);cursor:pointer;border:.5px solid var(--bmed); /* 44px tap target at every width */
   background:var(--s2);color:var(--tx);white-space:nowrap;transition:background var(--t-fast),opacity var(--t-fast),transform var(--t-fast) var(--ease-out)}
 .btn:hover{background:var(--s3)}
 .btn:active,.level:active,.shape:active{transform:scale(.96)}
 .btn-primary,.btn-primary:hover{background:var(--tx);color:var(--bg);border-color:var(--tx)}
 .btn-primary:hover{opacity:.82}
-.btn-ghost{background:none;border-color:transparent;color:var(--txm)}
+.btn-ghost{background:none;border-color:transparent;color:inherit} /* sky text in the bar */
+dialog .btn-ghost{color:var(--txm)}
 .btn-ghost:hover{background:var(--s2);color:var(--tx)}
 .btn-sample{background:var(--bbg);color:var(--blue);border-color:var(--blue);font-weight:600}
 .btn-sample:hover{background:var(--blue);color:var(--surface)}
-.theme-toggle{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 4px;background:none;border:0;color:var(--txm);font:var(--fs-sm) var(--font-body);cursor:pointer}
+.theme-toggle{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 4px;background:none;border:0;color:inherit;font:var(--fs-sm) var(--font-body);cursor:pointer}
 .toggle-track{width:30px;height:17px;background:var(--s3);border-radius:9px;position:relative;transition:background .2s}
 .toggle-thumb{position:absolute;top:2px;left:2px;width:13px;height:13px;background:var(--txm);border-radius:50%;transition:transform .2s,background .2s}
 .theme-toggle[aria-checked="true"] .toggle-track{background:var(--blue)}
@@ -98,12 +120,21 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .rec-line{margin:0;font-size:var(--fs-sm);color:var(--txm)}
 .rec-line.new{color:var(--green);font-weight:600}
 .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.icon-btn{padding:0 12px}
+/* Settings: sky picker. Each swatch carries its sky's class, so it previews the real gradient. */
+.skies{display:grid;gap:6px;margin:0;padding:0;border:0}
+.skies legend{padding:0}
+.skies label{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:12px;min-height:48px;padding:6px 12px;border:.5px solid var(--bmed);border-radius:var(--r);cursor:pointer}
+.skies label:has(:checked){border-color:var(--tx);box-shadow:inset 0 0 0 1px var(--tx)}
+.skies input{margin:0;accent-color:var(--tx)}
+.skies i{width:28px;height:28px;border-radius:50%;background:linear-gradient(var(--bg-gradient-top),var(--bg-gradient-mid),var(--bg-gradient-bottom))}
+.skies small{font-size:var(--fs-sm);color:var(--txm)}
 /* Home: pick a shape, then tap a level to start. Shapes are drawn from the same masks the generator uses. */
-.home{position:fixed;inset:0;z-index:5;overflow-y:auto;touch-action:pan-y;background:var(--bg);display:flex;flex-direction:column;align-items:center;gap:20px;
+.home{position:fixed;inset:0;z-index:5;overflow-y:auto;touch-action:pan-y;display:flex;flex-direction:column;align-items:center;gap:20px;
   padding-inline:16px;padding-block:calc(env(safe-area-inset-top,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 24px)}
 .home>*{width:100%;max-width:880px}
 .home-body{display:grid;gap:24px}
-.eyebrow{font:600 var(--fs-xs)/1.2 var(--font-body);text-transform:uppercase;letter-spacing:.06em;color:var(--txm);margin:0 0 10px}
+.eyebrow{font:600 var(--fs-xs)/1.2 var(--font-body);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px}
 .shapes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .shape{display:grid;justify-items:center;gap:8px;padding:12px 6px 10px;background:var(--surface);border:.5px solid var(--bmed);border-radius:var(--rl);
   color:var(--txm);font:500 var(--fs-sm) var(--font-body);cursor:pointer;transition:transform var(--t-fast) var(--ease-out),color var(--t-fast)}
@@ -118,7 +149,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .level .sz,.level .rec{font-size:var(--fs-sm);color:var(--txm);font-variant-numeric:tabular-nums}
 .level .rec{text-align:right;line-height:1.35}
 .flows{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}.flows i{width:6px;height:6px;border-radius:50%} /* the exact colors this level's board uses */
-.pts-line{margin:12px 0 0;font-size:var(--fs-sm);color:var(--txm)}
+.pts-line{margin:12px 0 0;font-size:var(--fs-sm)}
 @media (min-width:760px){
   .home{padding-block:calc(env(safe-area-inset-top,0px) + 24px) 40px;gap:32px}
   .home-body{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:start}
@@ -134,10 +165,12 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
   header,.card,.bar,footer{grid-column:2;max-width:none}
 }
 </style>
+<div class="sky" aria-hidden="true"><i></i><i></i></div> <!-- sun, moon -->
 <section id="home" class="home" aria-label="Choose a board">
   <header>
     <h1 class="brand"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v7a5 5 0 0 0 5 5h7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><circle cx="6" cy="6" r="4" fill="currentColor"/><circle cx="18" cy="18" r="4" fill="currentColor"/></svg>Flow</h1>
     <button class="theme-toggle" role="switch" aria-checked="false">Dark mode<span class="toggle-track"><span class="toggle-thumb"></span></span></button>
+    <button class="btn btn-ghost icon-btn set-btn" aria-label="Settings" title="Settings"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="3"/><circle cx="8" cy="17" r="3"/></svg></button>
   </header>
   <div class="home-body">
     <div><h2 class="eyebrow">Shape</h2><div class="shapes" id="shapes"></div></div>
@@ -148,6 +181,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
   <header>
     <h1 class="brand"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v7a5 5 0 0 0 5 5h7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><circle cx="6" cy="6" r="4" fill="currentColor"/><circle cx="18" cy="18" r="4" fill="currentColor"/></svg>Flow</h1>
     <button class="theme-toggle" role="switch" aria-checked="false">Dark mode<span class="toggle-track"><span class="toggle-thumb"></span></span></button>
+    <button class="btn btn-ghost icon-btn set-btn" aria-label="Settings" title="Settings"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="3"/><circle cx="8" cy="17" r="3"/></svg></button>
   </header>
   <section id="hud" class="card stats" aria-label="Game stats"><div><b>Time</b><span id="tm"></span></div><div><b>Score</b><span id="sc"></span></div><div><b>Points</b><span id="pts"></span></div><button class="btn btn-sample" id="hintBtn">Hint −10</button></section>
   <main id="wrap"><canvas id="cv" aria-label="Flow puzzle board"></canvas></main>
@@ -159,5 +193,16 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
   <div class="stats" id="dsum"><div><b>Time</b><span id="dt"></span></div><div><b>Score</b><span id="ds"></span></div><div><b>Points</b><span id="de"></span></div></div>
   <p class="rec-line" id="rec"></p>
   <div class="row"><button class="btn btn-ghost" id="keepBtn" value=""></button><button class="btn" value="home">Home</button><button class="btn btn-primary" id="goBtn" value="go" autofocus></button></div>
+</form></dialog>
+<dialog id="setDlg"><form method="dialog" id="setForm">
+  <h2>Settings</h2>
+  <fieldset class="skies"><legend class="eyebrow">Sky</legend>
+    <label><input type="radio" name="sky" value="auto"><i id="autoSw"></i>Auto<small>Follows the clock</small></label>
+    <label><input type="radio" name="sky" value="sunrise"><i class="sunrise"></i>Sunrise<small>5–8 AM</small></label>
+    <label><input type="radio" name="sky" value="daytime"><i class="daytime"></i>Daytime<small>8 AM–5 PM</small></label>
+    <label><input type="radio" name="sky" value="sunset"><i class="sunset"></i>Sunset<small>5–8 PM</small></label>
+    <label><input type="radio" name="sky" value="nighttime"><i class="nighttime"></i>Night<small>8 PM–5 AM</small></label>
+  </fieldset>
+  <div class="row"><button class="btn btn-primary">Done</button></div>
 </form></dialog>
 <script src="app.js"></script>
