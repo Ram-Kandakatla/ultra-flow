@@ -5,7 +5,7 @@ const LEVELS=[['Easy',5],['Medium',7],['Hard',9],['Expert',11],['Godlike',13]],
   SHAPES={Square:()=>true, Circle:(n,y,x,c)=>y*y+x*x<=(c+.5)**2,
     Ring:(n,y,x)=>{const h=(n-3)/4|0;return Math.abs(y)>h||Math.abs(x)>h}, Plus:(n,y,x)=>{const h=(n+1)/6|0;return Math.abs(y)<=h||Math.abs(x)<=h}},
   maskOf=(sh,n)=>{const c=(n-1)/2;return [...Array(n*n)].map((_,i)=>SHAPES[sh](n,(i/n|0)-c,i%n-c,c))},
-  PALETTE=13, flows=(N,n)=>Math.min(PALETTE,Math.max(3,Math.round(N/n))), // pipe count for a board of N cells
+  PALETTE=19, flows=(N,n)=>Math.min(PALETTE,Math.max(3,Math.round(N/(n/2+2.5)))), // pipe count for a board of N cells: avg pipe = n/2+2.5 cells, so bigger boards get more, shorter pipes (square: 5,8,12,15,19)
   root=document.documentElement,
   $=id=>document.getElementById(id), cv=$('cv'), x=cv.getContext('2d'), tryDo=f=>{try{return f()}catch{}};
 let shape,n,M,N,cells,dot,sol,paths,cur=-1,won,sec,hints,earned,scored,total,ptr,newRec,pick,wasDone=[],fx=[],raf=0;
@@ -28,7 +28,8 @@ function save(){const v=JSON.stringify(stats);
   tryDo(()=>document.cookie=`flowStats=${encodeURIComponent(v)};max-age=31536000;path=/;SameSite=Lax${location.protocol==='https:'?';Secure':''}`);tryDo(()=>localStorage.flowStats=v)}
 
 // Puzzle for any board shape: grow one random path over the board (extend into free neighbors, otherwise backbite),
-// jumping to a fresh cell when stuck (that jump becomes a cut). Mix with backbite moves, then cut into pipes of 3+ cells.
+// jumping to a fresh cell when stuck (that jump becomes a cut). Mix with backbite moves, cut into k pipes of even length,
+// then shuffle the pipe ends so the dots spread over the board.
 // A full-fill solution always exists by construction. ponytail: solutions aren't unique; any full fill wins.
 function gen(n,M){
   const nb=i=>[i-n,i+n,i%n?i-1:-1,(i+1)%n?i+1:-1].filter(j=>j>=0&&j<n*n&&M[j]), adj=(a,b)=>nb(a).includes(b),
@@ -47,12 +48,25 @@ function gen(n,M){
     for(let t=0;t<N*30;t++){if(Math.random()<.5)p.reverse();p=bite(p)}
     const segs=[[p[0]]];for(let i=1;i<N;i++)adj(p[i-1],p[i])?segs.at(-1).push(p[i]):segs.push([p[i]]);
     if(segs.length>k||segs.some(s=>s.length<3))continue;
-    for(let r=0;r<20;r++){ // extra cuts until there are k pipes; no pipe may have its two dots side by side
-      const pipes=segs.map(s=>[...s]);
-      while(pipes.length<k){const big=pipes.filter(s=>s.length>=6);if(!big.length)break;
-        const s=big[Math.random()*big.length|0],c=3+(Math.random()*(s.length-5)|0);pipes.splice(pipes.indexOf(s),1,s.slice(0,c),s.slice(c))}
-      if(pipes.length===k&&pipes.every(s=>!adj(s[0],s.at(-1))))return pipes;
+    let pipes=segs;const L=N/k,lo=Math.max(3,L/2),hi=L*1.5;
+    while(pipes.length<k){const s=pipes.reduce((a,b)=>b.length>a.length?b:a);if(s.length<6)break; // cut the longest pipe into ~N/k-cell pieces: even lengths
+      const c=Math.min(s.length-3,Math.max(3,Math.round(s.length/Math.max(2,Math.round(s.length/L)))));pipes.splice(pipes.indexOf(s),1,s.slice(0,c),s.slice(c))}
+    if(pipes.length<k)continue;
+    // Every cut left two dots side by side; shuffle them apart. A pipe end steps onto a neighbor: in its own pipe that's a backbite
+    // (the pipe winds a new way), in another pipe it takes over that pipe's tail. Lengths stay within lo..hi so no pipe hogs the board,
+    // and a step that puts more dots side by side is mostly refused.
+    const touch=ps=>{const d=new Set(ps.flatMap(p=>[p[0],p.at(-1)]));let s=0;for(const i of d)for(const j of nb(i))s+=d.has(j);return s};
+    let cost=touch(pipes);
+    for(let t=0;t<N*40;t++){
+      const a=Math.random()*k|0,P=pipes[a];if(Math.random()<.5)P.reverse();
+      const o=nb(P.at(-1)).filter(j=>j!==P.at(-2)),w=o[Math.random()*o.length|0],b=pipes.findIndex(q=>q.includes(w)),Q=pipes[b],np=[...pipes];
+      if(b<0)continue;
+      if(Q===P){const i=P.indexOf(w);np[a]=P.slice(0,i+1).concat(P.slice(i+1).reverse())}
+      else{if(Math.random()<.5)Q.reverse();const i=Q.indexOf(w);if(i<lo||P.length+Q.length-i>hi)continue;np[a]=P.concat(Q.slice(i));np[b]=Q.slice(0,i)}
+      if(adj(np[a][0],np[a].at(-1))||adj(np[b][0],np[b].at(-1)))continue; // a pipe's own two dots never end up side by side
+      const c=touch(np);if(c<=cost||Math.random()<.05){pipes=np;cost=c} // the rare uphill step keeps the shuffle from getting stuck
     }
+    if(pipes.every(s=>!adj(s[0],s.at(-1))))return pipes; // safety net: a cut piece that started with its dots side by side and never moved
   }
 }
 
@@ -204,5 +218,5 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   for(const sh in SHAPES)for(const [,z] of LEVELS)for(let k=0;k<5;k++){newGame(sh,z);stats.points=HINT;$('hintBtn').click();bad+=stats.points!==0||hints.size!==1;
     paths[0]=[...sol[0]];check();const t1=total;paths[0]=[sol[0][0]];check();paths[0]=[...sol[0]].reverse();check();bad+=t1!==connVal()||total!==t1; // reconnecting pays nothing
     sec=k+5;paths=sol.map(s=>[...s]);check();
-    bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
+    bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||sol.length!==flows(N,n)||sol.some(s=>s.length>2*N/sol.length)||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
   console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)}
