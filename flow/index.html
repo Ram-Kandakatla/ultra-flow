@@ -67,6 +67,11 @@ body.theme-classic{--glow:rgba(0,0,0,.3);--amb:transparent} /* flat board as in 
 .nighttime{--bg-gradient-top:#050b14;--bg-gradient-mid:#101f32;--bg-gradient-bottom:#1a2a3a;--text-color:#e0e6ed;--celestial-color:#f4f5f7;--celestial-shadow:rgba(255,255,255,.2);--orbital-rotation:260deg} /* 8PM-5AM: sun down, moon up */
 :is(.daytime,.sunset) :is(header,#st,#solBtn,footer,.home .eyebrow,.pts-line,.lead){text-shadow:0 1px 3px rgba(0,0,0,.35)} /* light text on the pale ends of those skies */
 .sky{position:fixed;inset:0;z-index:-1;pointer-events:none} /* behind everything; the transparent home screen shows it too */
+/* iOS Safari 26 ignores theme-color and tints its status bar and bottom bar from a full-width fixed element at each edge.
+   These strips carry the background's end colors. app.js gives them the body's classes (so they skip its 3s fade and show
+   the final color) and swaps in fresh ones on each change, which makes Safari re-sample. */
+.edge{position:fixed;left:0;right:0;top:0;height:max(6px,env(safe-area-inset-top,0px));background:var(--bg-gradient-top);pointer-events:none;z-index:10}
+#edgeB{top:auto;bottom:0;height:max(6px,env(safe-area-inset-bottom,0px));background:var(--bg-gradient-bottom)}
 body:not(.theme-sky) .sky{display:none}
 .sky i{position:absolute;width:80px;height:80px;margin:-40px;border-radius:50%;background:var(--celestial-color);box-shadow:0 0 40px var(--celestial-shadow);
   left:calc(50% - 42vw*cos(var(--orbital-rotation)));top:calc(100% - 85vh*sin(var(--orbital-rotation)));transition:background-color 3s ease,box-shadow 3s ease} /* elliptical arc: stays on screen on phones too */
@@ -239,6 +244,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 }
 </style>
 <div class="sky" aria-hidden="true"><i></i><i></i></div> <!-- sun, moon -->
+<div class="edge" id="edgeT" aria-hidden="true"></div><div class="edge" id="edgeB" aria-hidden="true"></div>
 <section id="home" class="home" aria-label="Flow home">
   <header>
     <h1 class="brand"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v7a5 5 0 0 0 5 5h7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><circle cx="6" cy="6" r="4" fill="currentColor"/><circle cx="18" cy="18" r="4" fill="currentColor"/></svg>Flow</h1>
