@@ -256,7 +256,7 @@ $('levels').onclick=e=>{const b=e.target.closest('.level');if(!b)return;$('home'
 
 // Theme: follows the system until a switch is used, then the choice is saved with the stats (GPA-calc behavior).
 const mq=matchMedia('(prefers-color-scheme: dark)'), toggles=document.querySelectorAll('.theme-toggle'),
-  syncTheme=()=>{const d=root.dataset.theme?root.dataset.theme==='dark':mq.matches;toggles.forEach(t=>t.setAttribute('aria-checked',d));draw()};
+  syncTheme=()=>{const d=root.dataset.theme?root.dataset.theme==='dark':mq.matches;toggles.forEach(t=>t.setAttribute('aria-checked',d));setLook();draw()}; // Classic's edges follow the tone
 if(stats.theme)root.dataset.theme=stats.theme;
 toggles.forEach(t=>t.onclick=()=>{stats.theme=root.dataset.theme=t.getAttribute('aria-checked')==='true'?'light':'dark';
   stats.sky=stats.theme==='dark'?'nighttime':'daytime';save();setLook()}); // the switch also pins the sky: day = the 8 AM sky, night = the 8 PM sky
@@ -266,8 +266,10 @@ new MutationObserver(syncTheme).observe(root,{attributes:true,attributeFilter:['
 // until the Dark mode switch or Settings picks one, saved with the stats. Settings' sky picker only works with Time of day equipped.
 const SKY=[[5,'nighttime'],[8,'sunrise'],[17,'daytime'],[20,'sunset'],[24,'nighttime']], skyAt=h=>SKY.find(([e])=>h<e)[1], // [hour it ends, sky]
   pinned=()=>SKY.some(([,s])=>s===stats.sky)&&stats.sky, // anything else (incl. 'auto') follows the clock
-  setLook=()=>{const a=skyAt(new Date().getHours()),bg=use('bg');$('autoSw').className=a;
-    document.body.className='theme-'+bg+(bg==='sky'?' '+(pinned()||a):'');$('skyPick').disabled=bg!=='sky';$('skyHint').hidden=bg==='sky'};
+  setLook=()=>{const a=skyAt(new Date().getHours()),bg=use('bg'),c='theme-'+bg+(bg==='sky'?' '+(pinned()||a):'');$('autoSw').className=a;
+    document.body.className=c;$('skyPick').disabled=bg!=='sky';$('skyHint').hidden=bg==='sky';
+    for(const id of ['edgeT','edgeB']){const e=$(id).cloneNode();e.className='edge '+c;$(id).replaceWith(e)} // fresh edge strips: iOS Safari re-tints its bars
+    const top=getComputedStyle($('edgeT')).backgroundColor;document.querySelectorAll('meta[name=theme-color]').forEach(m=>m.content=top)}; // older iOS and Android read theme-color
 document.querySelectorAll('.set-btn').forEach(b=>b.onclick=()=>{$('setForm').sky.value=pinned()||'auto';$('letters').checked=stats.letters===true;$('setDlg').showModal()});
 $('setForm').onchange=e=>{if(e.target.id==='letters')stats.letters=e.target.checked;else stats.sky=e.target.value;save();setLook();draw()};
 setLook();setInterval(setLook,60000);document.addEventListener('visibilitychange',setLook); // resumed apps catch up at once
@@ -290,6 +292,8 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   const keep=[stats.points,stats.own,stats.use];stats.own=[];stats.use={}; // shop: can't overspend, pays once, re-equips free
   stats.points=TIER.Rare-1;bad+=buy('bg','dunes')||stats.points!==TIER.Rare-1||use('bg')!=='classic';
   stats.points=TIER.Rare;bad+=!buy('bg','dunes')||stats.points!==0||use('bg')!=='dunes'||!document.body.classList.contains('theme-dunes');
+  {const c=id=>getComputedStyle($(id)).backgroundColor; // edge strips carry the background's end colors at once (no fade), and theme-color follows
+    bad+=c('edgeT')!=='rgb(251, 227, 191)'||c('edgeB')!=='rgb(227, 154, 95)'||document.querySelector('meta[name=theme-color]').content!==c('edgeT')}
   bad+=!buy('bg','dunes')||stats.points!==0||!buy('bg','classic')||use('bg')!=='classic'||buy('bg','nope')||buy('toString','x');
   for(const cat in SHOP)for(const [id] of SHOP[cat][1]){stats.points=1e4;bad+=!buy(cat,id)||use(cat)!==id; // every cosmetic equips and draws
     fx=[{k:id==='confetti'||id==='fireworks'?id:'win',t0:performance.now()-400,dur:MS.burst}];draw()}
