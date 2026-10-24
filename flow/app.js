@@ -208,6 +208,14 @@ if(stats.theme)root.dataset.theme=stats.theme;
 toggles.forEach(t=>t.onclick=()=>{stats.theme=root.dataset.theme=t.getAttribute('aria-checked')==='true'?'light':'dark';save()});
 new MutationObserver(syncTheme).observe(root,{attributes:true,attributeFilter:['data-theme']});mq.addEventListener('change',syncTheme);
 
+// Sky: the background follows the clock (checked every minute) unless a sky is picked in Settings, saved with the stats.
+const SKY=[[5,'nighttime'],[8,'sunrise'],[17,'daytime'],[20,'sunset'],[24,'nighttime']], skyAt=h=>SKY.find(([e])=>h<e)[1], // [hour it ends, sky]
+  pinned=()=>SKY.some(([,s])=>s===stats.sky)&&stats.sky, // anything else (incl. 'auto') follows the clock
+  setSky=()=>{const a=skyAt(new Date().getHours());$('autoSw').className=a;document.body.className=pinned()||a};
+document.querySelectorAll('.set-btn').forEach(b=>b.onclick=()=>{$('setForm').sky.value=pinned()||'auto';$('setDlg').showModal()});
+$('setForm').onchange=e=>{stats.sky=e.target.value;save();setSky()};
+setSky();setInterval(setSky,60000);
+
 const [ls,lz]=stats.last||[];
 newGame(Object.hasOwn(SHAPES,ls)?ls:'Square',LEVELS.some(l=>l[1]===lz)?lz:5);syncTheme();showHome(); // last board waits behind the home screen
 document.fonts?.ready.then(draw); // dot letters use the display face once it loads
@@ -219,4 +227,5 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
     paths[0]=[...sol[0]];check();const t1=total;paths[0]=[sol[0][0]];check();paths[0]=[...sol[0]].reverse();check();bad+=t1!==connVal()||total!==t1; // reconnecting pays nothing
     sec=k+5;paths=sol.map(s=>[...s]);check();
     bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||sol.length!==flows(N,n)||sol.some(s=>s.length>2*N/sol.length)||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
+  bad+=[4,5,7,8,16,17,19,20,23].map(skyAt)+''!=='nighttime,sunrise,sunrise,daytime,daytime,sunset,sunset,nighttime,nighttime';
   console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)}
