@@ -8,7 +8,7 @@ const LEVELS=[['Easy',5],['Medium',7],['Hard',9],['Expert',11],['Godlike',13]],
   PALETTE=19, flows=(N,n)=>Math.min(PALETTE,Math.max(3,Math.round(N/(n/2+2.5)))), // pipe count for a board of N cells: avg pipe = n/2+2.5 cells, so bigger boards get more, shorter pipes (square: 5,8,12,15,19)
   root=document.documentElement,
   $=id=>document.getElementById(id), cv=$('cv'), x=cv.getContext('2d'), tryDo=f=>{try{return f()}catch{}};
-let shape,n,M,N,cells,dot,sol,paths,cur=-1,won,sec,hints,earned,scored,total,ptr,newRec,pick,wasDone=[],fx=[],raf=0;
+let shape,n,M,N,cells,dot,sol,paths,cur=-1,won,sec,hints,earned,scored,total,ptr,newRec,pick,wasDone=[],fx=[],raf=0,demo=null,saved;
 const key=()=>shape+'-'+n, levelName=z=>LEVELS.find(l=>l[1]===z)[0];
 // Motion: one set of timing tokens (ms) for every canvas effect; all of it is skipped under Reduce Motion.
 const RM=matchMedia('(prefers-reduced-motion: reduce)'), MS={stagger:35,wave:28,pop:320,ring:450,spark:600,fade:400,lift:420,burst:1600}; // lift = .pop board CSS
@@ -32,7 +32,8 @@ const TIER={Free:0,Common:60,Rare:150,Epic:350,Legendary:800},
     win:['Win effects',[['wave','Wave','Free'],['ripple','Ripple','Common'],['confetti','Confetti','Rare'],['rainbow','Rainbow','Epic'],['fireworks','Fireworks','Legendary']]]},
   item=(cat,id)=>Object.hasOwn(SHOP,cat)&&SHOP[cat][1].find(([i])=>i===id),
   owned=(cat,id)=>!!item(cat,id)&&(TIER[item(cat,id)[2]]===0||stats.own.includes(cat+':'+id)),
-  use=cat=>owned(cat,stats.use[cat])?stats.use[cat]:SHOP[cat][1][0][0];
+  use=cat=>owned(cat,stats.use[cat])?stats.use[cat]:SHOP[cat][1][0][0],
+  look=cat=>demo?.cat===cat?demo.id:use(cat); // what to draw: the equipped item, or the one being previewed
 stats.own=Array.isArray(stats.own)?stats.own:[]; // bought, as "cat:id"
 stats.use=stats.use&&typeof stats.use==='object'&&!Array.isArray(stats.use)?stats.use:{}; // equipped id per category
 function buy(cat,id){const it=item(cat,id);if(!it)return false; // owned: just equip; otherwise pay first
@@ -103,7 +104,7 @@ const WIDE=matchMedia('(min-width:700px) and (min-aspect-ratio:5/4)'); // same q
 function draw(){
   const s=cv.width/n, X=i=>(i%n+.5)*s, Y=i=>((i/n|0)+.5)*s, R=i=>[i%n*s,(i/n|0)*s,s,s],
     Q=i=>{const g=s*.06,b=[i%n*s+g,(i/n|0)*s+g,s-2*g,s-2*g];x.beginPath();x.roundRect?x.roundRect(...b,s*.2):x.rect(...b);x.fill()}, // rounded tile inside a cell
-    cs=getComputedStyle(root), v=k=>cs.getPropertyValue(k).trim(), C=sol.map((g,c)=>v('--p'+c)), ds=use('dot'), wf=use('win'), // colors follow the tone
+    cs=getComputedStyle(root), v=k=>cs.getPropertyValue(k).trim(), C=Array.from({length:demo?6:sol.length},(_,c)=>v('--p'+c)), ds=look('dot'), wf=look('win'), // colors follow the tone; a demo's confetti gets a real board's mix
     now=performance.now(), el=(k,c)=>{const f=fx.find(f=>f.k===k&&(c==null||f.c===c));return f?now-f.t0:1e9}, // ms into an effect, huge = finished
     ease=k=>1-(1-Math.min(1,Math.max(0,k)))**3; // ease-out: things arrive and settle
   fx=fx.filter(f=>now-f.t0<f.dur);
@@ -155,15 +156,18 @@ const DOT={glossy:(X,Y,r)=>x.arc(X,Y,r,0,7), flat:(X,Y,r)=>x.arc(X,Y,r*.88,0,7),
 
 function check(){
   const done=paths.map((p,c)=>p.length>1&&dot[p.at(-1)]===c), f=done.filter(Boolean).length, filled=new Set(paths.flat()).size,
-    solved=!won&&f===sol.length&&filled===N;
+    solved=!won&&f===sol.length&&(filled===N||!!demo); // the shop's 2x2 demo only asks for the connection
   if(!won)done.forEach((d,c)=>{if(d&&!wasDone[c]){play('ring',c,MS.ring);if(solved)play('spark',c,MS.spark)} // the winning connection also sparks
     if(d&&!scored.has(c)){scored.add(c);total+=connVal()}}); // score: first connection of each color only
   wasDone=done;
-  if(solved){won=1;cur=-1;earned=Math.round(total/10);stats.points+=earned;
-    const k=key();stats.solved[k]=(stats.solved[k]||0)+1;newRec=!(stats.best[k]<=sec);if(newRec)stats.best[k]=sec;save();
-    const wf=use('win'),burst=wf==='confetti'||wf==='fireworks',dur=burst?MS.burst:MS.wave*(2*n-2)+MS.pop;
+  if(solved){won=1;cur=-1;
+    if(!demo){earned=Math.round(total/10);stats.points+=earned; // a demo pays nothing and counts nothing
+      const k=key();stats.solved[k]=(stats.solved[k]||0)+1;newRec=!(stats.best[k]<=sec);if(newRec)stats.best[k]=sec;save()}
+    const wf=look('win'),burst=wf==='confetti'||wf==='fireworks',dur=burst?MS.burst:MS.wave*(2*n-2)+MS.pop;
     pulse(cv,'pop');play(burst?wf:'win',null,dur,MS.lift); // board pops out, then the equipped win effect plays
-    setTimeout(()=>won===1&&showWin(),RM.matches?400:MS.lift+dur+150)}
+    if(!demo)setTimeout(()=>won===1&&showWin(),RM.matches?400:MS.lift+dur+150)}
+  if(demo){const nm=item(demo.cat,demo.id)[1];return $('demoSt').textContent=demo.cat==='dot'?(won?`${nm} dots, connected`:`Join the two dots to try ${nm}`)
+    :`${nm} on a solved board${RM.matches?' (effects are off under Reduce Motion)':''}`}
   $('st').textContent=won===2?'Solution shown. Tap Done for a new one':won?`Connected · ${fmt(sec)} · +${earned} points · ${newRec?'new record':'record '+fmt(stats.best[key()])}`:`Flows ${f}/${sol.length} · Pipe ${Math.round(filled*100/N)}%`;
   $('st').className=won===1?'win':'';$('best').textContent=`${shape} · ${levelName(n)} ${n}×${n} · solved ${stats.solved[key()]||0}`;hud();
 }
@@ -245,12 +249,32 @@ function renderProfile(){const [nm,z]=LEVELS.at(-1),t=sh=>+stats.best[sh+'-'+z],
 function renderShop(){const pts=+stats.points||0,now=skyAt(new Date().getHours());
   $('tab-shop').innerHTML=`<p class="wallet"><b>${pts}</b> points · buy once, switch any time</p>`+Object.entries(SHOP).map(([cat,[title,list]])=>
     `<section><h2 class="eyebrow">${title}</h2><div class="items">${list.map(([id,name,tier])=>{const own=owned(cat,id),on=use(cat)===id,p=TIER[tier];
-      return `<div class="item card"><i class="pv pv-${cat} ${cat==='bg'?'theme-'+id+(id==='sky'?' '+now:''):cat+'-'+id}" aria-hidden="true"></i><b id="it-${cat}-${id}">${name}</b><span class="tier t-${tier}">${tier}</span>`+
+      return `<div class="item card"><button class="peek-btn" data-pv="${cat}:${id}" aria-label="Preview ${name}" title="Preview">?</button><i class="pv pv-${cat} ${cat==='bg'?'theme-'+id+(id==='sky'?' '+now:''):cat+'-'+id}" data-pv="${cat}:${id}" aria-hidden="true"></i><b id="it-${cat}-${id}">${name}</b><span class="tier t-${tier}">${tier}</span>`+
         `<button class="btn${on?' in-use':' btn-primary'}" data-cat="${cat}" data-id="${id}" aria-describedby="it-${cat}-${id}"${on||!own&&pts<p?' aria-disabled="true"':''}>${on?'In use':own?'Use':'Buy · '+p}</button></div>`}).join('')}</div></section>`).join('')}
-$('tab-shop').onclick=e=>{const b=e.target.closest('button[data-cat]');if(!b||b.getAttribute('aria-disabled'))return;
+$('tab-shop').onclick=e=>{const v=e.target.closest('[data-pv]');if(v){const [c,i]=v.dataset.pv.split(':');return c==='bg'?peek(i):startDemo(c,i)} // the ? or the icon previews
+  const b=e.target.closest('button[data-cat]');if(!b||b.getAttribute('aria-disabled'))return;
   const {cat,id}=b.dataset,at=()=>$('tab-shop').querySelector(`[data-cat="${cat}"][data-id="${id}"]`);
   if(!owned(cat,id)&&!b.dataset.sure){renderShop();const c=at();c.dataset.sure=1;c.textContent='Tap again to buy';c.focus();return}
   buy(cat,id);renderShop();at().focus()};
+// Shop previews. Background: the page wears it for 4.5s while the shop fades out (a tap ends it early).
+// Dots and win effects: the game screen runs a 2x2 demo board while the real board waits in `saved`; Back returns to the same shop spot.
+let peekBg=null,peekT;
+function peek(id){clearTimeout(peekT);peekBg=id;document.body.style.transitionDuration='.4s'; // not the 3s fade: the preview is short
+  $('home').dataset.peek=`${item('bg',id)[1]} preview`;$('home').classList.add('peek');setLook();peekT=setTimeout(unpeek,4500)}
+function unpeek(){clearTimeout(peekT);peekBg=null;$('home').classList.remove('peek');setLook();setTimeout(()=>peekBg||(document.body.style.transitionDuration=''),400)}
+$('home').onclick=e=>{if(peekBg&&e.target===e.currentTarget)unpeek()};
+function startDemo(cat,id){
+  if(!demo){saved={shape,n,M,N,cells,dot,sol,paths,won,sec,hints,earned,scored,total,newRec,wasDone};demo={top:$('home').scrollTop}}
+  clearTimeout(demo.auto);Object.assign(demo,{cat,id});
+  n=2;M=[1,1,1,1];cells=[0,1,2,3];N=4;sol=[[0,1,3]];dot=[0,-1,-1,0];paths=[[]];won=0;cur=-1;sec=total=0;hints=new Set();scored=new Set();wasDone=[];fx=[];
+  $('home').hidden=true;$('game').inert=false;$('game').classList.add('demo');play('spawn',null,MS.pop);resize();
+  if(cat==='win')demo.auto=setTimeout(()=>{paths=[[...sol[0]]];draw();check()},700)} // win effects play on their own
+function endDemo(){const {cat,id,top,auto}=demo;clearTimeout(auto);demo=null;
+  ({shape,n,M,N,cells,dot,sol,paths,won,sec,hints,earned,scored,total,newRec,wasDone}=saved);fx=[];cur=-1;
+  $('game').classList.remove('demo');delete $('sc').dataset.v;resize();
+  $('home').hidden=false;$('game').inert=true;tab('shop');$('home').scrollTop=top;
+  $('tab-shop').querySelector(`.peek-btn[data-pv="${cat}:${id}"]`)?.focus({preventScroll:true})}
+$('againBtn').onclick=()=>startDemo(demo.cat,demo.id);$('backBtn').onclick=endDemo;
 $('shapes').onclick=e=>{const b=e.target.closest('.shape');if(!b)return;pick=b.dataset.shape;renderHome();$('shapes').querySelector(`[data-shape="${pick}"]`).focus()};
 $('levels').onclick=e=>{const b=e.target.closest('.level');if(!b)return;$('home').hidden=true;$('game').inert=false;newGame(pick,+b.dataset.n)};
 
@@ -266,7 +290,7 @@ new MutationObserver(syncTheme).observe(root,{attributes:true,attributeFilter:['
 // until the Dark mode switch or Settings picks one, saved with the stats. Settings' sky picker only works with Time of day equipped.
 const SKY=[[5,'nighttime'],[8,'sunrise'],[17,'daytime'],[20,'sunset'],[24,'nighttime']], skyAt=h=>SKY.find(([e])=>h<e)[1], // [hour it ends, sky]
   pinned=()=>SKY.some(([,s])=>s===stats.sky)&&stats.sky, // anything else (incl. 'auto') follows the clock
-  setLook=()=>{const a=skyAt(new Date().getHours()),bg=use('bg'),c='theme-'+bg+(bg==='sky'?' '+(pinned()||a):'');$('autoSw').className=a;
+  setLook=()=>{const a=skyAt(new Date().getHours()),bg=peekBg||use('bg'),c='theme-'+bg+(bg==='sky'?' '+(pinned()||a):'');$('autoSw').className=a;
     document.body.className=c;$('skyPick').disabled=bg!=='sky';$('skyHint').hidden=bg==='sky';
     for(const id of ['edgeT','edgeB']){const e=$(id).cloneNode();e.className='edge '+c;$(id).replaceWith(e)} // fresh edge strips: iOS Safari re-tints its bars
     const top=getComputedStyle($('edgeT')).backgroundColor;document.querySelectorAll('meta[name=theme-color]').forEach(m=>m.content=top)}; // older iOS and Android read theme-color
@@ -299,5 +323,9 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   for(const cat in SHOP)for(const [id] of SHOP[cat][1]){stats.points=1e4;bad+=!buy(cat,id)||use(cat)!==id; // every cosmetic equips and draws
     fx=[{k:id==='confetti'||id==='fireworks'?id:'win',t0:performance.now()-400,dur:MS.burst}];draw()}
   [stats.points,stats.own,stats.use]=keep;fx=[];setLook();draw();
+  {const p=stats.points,s0=sol,sv=JSON.stringify(stats.solved);startDemo('dot','star');paths=[[0,1,3]];check(); // shop demo: wins, pays nothing, gives the real board back
+    bad+=n!==2||!won||look('dot')!=='star'||stats.points!==p||JSON.stringify(stats.solved)!==sv||$('demoSt').textContent!=='Star dots, connected';
+    endDemo();bad+=sol!==s0||look('dot')!==use('dot')||$('home').hidden||$('tab-shop').hidden;
+    peek('ocean');bad+=!document.body.classList.contains('theme-ocean');unpeek();bad+=document.body.classList.contains('theme-ocean');tab('play')}
   showWin();bad+=$('winBar').hidden||!$('doneBtn').hidden;newGame(shape,n);bad+=!$('winBar').hidden||$('doneBtn').hidden; // win bar swaps in, a new board swaps it out
   console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)}
