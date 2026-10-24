@@ -51,6 +51,7 @@
 :root{--text-color:#eceff1;--celestial-color:#f5f5f5;--celestial-shadow:rgba(255,255,255,.4)}
 .theme-classic{--bg-gradient-top:var(--bg);--bg-gradient-mid:var(--bg);--bg-gradient-bottom:var(--bg);--text-color:var(--tx)} /* follows the Dark mode switch */
 .theme-classic :is(.lead,.home .eyebrow,#st,footer,.pts-line){color:var(--txm)} /* secondary text, as in the reference */
+body.theme-classic{--glow:rgba(0,0,0,.3);--amb:transparent} /* flat board as in the reference: a plain drop shadow, no halo */
 .theme-ocean{--bg-gradient-top:#0b2540;--bg-gradient-mid:#0f4468;--bg-gradient-bottom:#136a8f;--text-color:#e8f4fb;--accent:#4fc3dc}
 .theme-forest{--bg-gradient-top:#0d2418;--bg-gradient-mid:#1a4430;--bg-gradient-bottom:#2f6a45;--text-color:#eaf5ec;--accent:#7fd48a}
 .theme-dunes{--bg-gradient-top:#fbe3bf;--bg-gradient-mid:#f2c189;--bg-gradient-bottom:#e39a5f;--text-color:#3b2412;--accent:#c2552b}
@@ -256,7 +257,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
   <div class="tab" id="tab-profile" hidden>
     <section class="card profile" aria-label="Your profile">
       <div class="prof-head"><span class="avatar" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0z"/></svg></span>
-        <div class="stats prof-stats"><div><b>Points</b><span id="profPts"></span></div><div><b>Hardest cleared</b><span id="profTop"></span></div></div>
+        <div class="stats prof-stats"><div><b>Points</b><span id="profPts"></span></div><div><b id="profBestHead"></b><span id="profBest"></span></div></div>
         <button class="btn btn-primary icon-btn" id="toShop" aria-label="Open the shop" title="Shop"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg></button></div>
       <div><h2 class="eyebrow" id="bestsHead"></h2><ul class="bests" id="bests"></ul></div>
       <p class="prof-sub" id="profTotal"></p>

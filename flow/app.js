@@ -233,12 +233,14 @@ function tab(t){for(const b of $('tabs').children)b.setAttribute('aria-pressed',
   if(t==='profile')renderProfile();if(t==='shop')renderShop();$('home').scrollTop=0}
 $('tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(b)tab(b.dataset.tab)};
 $('toShop').onclick=()=>tab('shop');
-// Profile: points, the hardest level cleared on any shape, and per shape its hardest clear with the best time there.
+// Profile: points beside the fastest time on the hardest difficulty, then that difficulty's best time per shape.
+// A shape not yet cleared on it shows the hardest level it has cleared, as the next goal's context.
 const topClear=sh=>LEVELS.findLast(([,z])=>stats.best[sh+'-'+z]!=null);
-function renderProfile(){const rows=Object.keys(SHAPES).map(sh=>[sh,topClear(sh)]),top=LEVELS.findLast(([,z])=>rows.some(([,t])=>t?.[1]===z));
-  $('profPts').textContent=+stats.points||0;$('profTop').textContent=top?top[0]:'None yet';$('bestsHead').textContent='Best times on your hardest clears';
-  $('bests').innerHTML=rows.map(([sh,t])=>{const k=t&&sh+'-'+t[1];
-    return `<li>${preview(sh)}<span>${sh}<small>${t?`${t[0]} ${t[1]}×${t[1]}`:'Not cleared yet'}</small></span><b>${t?fmt(+stats.best[k]):'—'}${t?`<small>${+stats.solved[k]||0} solved</small>`:''}</b></li>`}).join('');
+function renderProfile(){const [nm,z]=LEVELS.at(-1),t=sh=>stats.best[sh+'-'+z],done=Object.keys(SHAPES).filter(sh=>t(sh)!=null);
+  $('profPts').textContent=+stats.points||0;$('profBestHead').textContent=`Best ${nm}`;
+  $('profBest').textContent=done.length?fmt(Math.min(...done.map(sh=>+t(sh)))):'—';$('bestsHead').textContent=`Best times · ${nm} ${z}×${z} (hardest)`;
+  $('bests').innerHTML=Object.keys(SHAPES).map(sh=>{const k=sh+'-'+z,h=topClear(sh);
+    return `<li>${preview(sh)}<span>${sh}<small>${t(sh)!=null?`${+stats.solved[k]||0} solved`:h?`Not cleared yet · hardest: ${h[0]}`:'Not cleared yet'}</small></span><b>${t(sh)!=null?fmt(+t(sh)):'—'}</b></li>`}).join('');
   $('profTotal').textContent=`${Object.values(stats.solved).reduce((a,v)=>a+(+v||0),0)} puzzles solved in all`}
 // Shop tab: buying takes two taps (the first turns the button into a confirm); owned items equip in one.
 function renderShop(){const pts=+stats.points||0,now=skyAt(new Date().getHours());
@@ -282,7 +284,8 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
     paths[0]=[...sol[0]];check();const t1=total;paths[0]=[sol[0][0]];check();paths[0]=[...sol[0]].reverse();check();bad+=t1!==connVal()||total!==t1; // reconnecting pays nothing
     sec=k+5;paths=sol.map(s=>[...s]);check();
     bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||sol.length!==flows(N,n)||sol.some(s=>s.length>2*N/sol.length)||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
-  {const b=stats.best;stats.best={'Ring-9':40,'Ring-13':90,'Plus-5':9};bad+=topClear('Ring')[1]!==13||topClear('Plus')[1]!==5||topClear('Circle')!==undefined;stats.best=b} // profile: hardest clear per shape
+  {const b=stats.best;stats.best={'Ring-9':40,'Ring-13':90,'Square-13':70,'Plus-5':9};bad+=topClear('Ring')[1]!==13||topClear('Plus')[1]!==5||topClear('Circle')!==undefined;
+    renderProfile();bad+=$('profBest').textContent!=='1:10'||!$('bests').textContent.includes('1:30')||!$('bests').textContent.includes('hardest: Easy');stats.best=b} // profile: fastest Godlike, per-shape rows
   bad+=[4,5,7,8,16,17,19,20,23].map(skyAt)+''!=='nighttime,sunrise,sunrise,daytime,daytime,sunset,sunset,nighttime,nighttime';
   const keep=[stats.points,stats.own,stats.use];stats.own=[];stats.use={}; // shop: can't overspend, pays once, re-equips free
   stats.points=TIER.Rare-1;bad+=buy('bg','dunes')||stats.points!==TIER.Rare-1||use('bg')!=='classic';
