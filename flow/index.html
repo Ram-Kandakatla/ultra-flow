@@ -189,7 +189,8 @@ function save(){const v=JSON.stringify(stats);
   tryDo(()=>document.cookie=`flowStats=${encodeURIComponent(v)};max-age=31536000;path=/;SameSite=Lax`);tryDo(()=>localStorage.flowStats=v)}
 
 // Puzzle for any board shape: grow one random path over the board (extend into free neighbors, otherwise backbite),
-// jumping to a fresh cell when stuck (that jump becomes a cut). Mix with backbite moves, then cut into pipes of 3+ cells.
+// jumping to a fresh cell when stuck (that jump becomes a cut). Mix with backbite moves, cut into k pipes of even length,
+// then shuffle the pipe ends so the dots spread over the board.
 // A full-fill solution always exists by construction. ponytail: solutions aren't unique; any full fill wins.
 function gen(n,M){
   const nb=i=>[i-n,i+n,i%n?i-1:-1,(i+1)%n?i+1:-1].filter(j=>j>=0&&j<n*n&&M[j]), adj=(a,b)=>nb(a).includes(b),
@@ -208,12 +209,24 @@ function gen(n,M){
     for(let t=0;t<N*30;t++){if(Math.random()<.5)p.reverse();p=bite(p)}
     const segs=[[p[0]]];for(let i=1;i<N;i++)adj(p[i-1],p[i])?segs.at(-1).push(p[i]):segs.push([p[i]]);
     if(segs.length>k||segs.some(s=>s.length<3))continue;
-    for(let r=0;r<20;r++){ // extra cuts until there are k pipes; no pipe may have its two dots side by side
-      const pipes=segs.map(s=>[...s]);
-      while(pipes.length<k){const big=pipes.filter(s=>s.length>=6);if(!big.length)break;
-        const s=big[Math.random()*big.length|0],c=3+(Math.random()*(s.length-5)|0);pipes.splice(pipes.indexOf(s),1,s.slice(0,c),s.slice(c))}
-      if(pipes.length===k&&pipes.every(s=>!adj(s[0],s.at(-1))))return pipes;
+    let pipes=segs;const L=N/k,lo=Math.max(3,L/2),hi=L*1.5;
+    while(pipes.length<k){const s=pipes.reduce((a,b)=>b.length>a.length?b:a);if(s.length<6)break; // cut the longest pipe into ~N/k-cell pieces: even lengths
+      const c=Math.round(s.length/Math.max(2,Math.round(s.length/L)));pipes.splice(pipes.indexOf(s),1,s.slice(0,c),s.slice(c))}
+    if(pipes.length<k)continue;
+    // Every cut left two dots side by side; shuffle them apart. A pipe end steps onto a neighbor: in its own pipe that's a backbite
+    // (the pipe winds a new way), in another pipe it takes over that pipe's tail. Lengths stay within lo..hi so no pipe hogs the board,
+    // and a step that puts more dots side by side is mostly refused.
+    const touch=ps=>{const d=new Set(ps.flatMap(p=>[p[0],p.at(-1)]));let s=0;for(const i of d)for(const j of nb(i))s+=d.has(j);return s};
+    let cost=touch(pipes);
+    for(let t=0;t<N*40;t++){
+      const a=Math.random()*k|0,P=pipes[a];if(Math.random()<.5)P.reverse();
+      const o=nb(P.at(-1)).filter(j=>j!==P.at(-2)),w=o[Math.random()*o.length|0],b=pipes.findIndex(q=>q.includes(w)),Q=pipes[b],np=[...pipes];
+      if(b<0)continue;
+      if(Q===P){const x=P.indexOf(w);np[a]=P.slice(0,x+1).concat(P.slice(x+1).reverse())}
+      else{if(Math.random()<.5)Q.reverse();const i=Q.indexOf(w);if(i<lo||P.length+Q.length-i>hi)continue;np[a]=P.concat(Q.slice(i));np[b]=Q.slice(0,i)}
+      const c=touch(np);if(c<=cost||Math.random()<.05){pipes=np;cost=c} // the rare uphill step keeps the shuffle from getting stuck
     }
+    if(pipes.every(s=>!adj(s[0],s.at(-1))))return pipes; // no pipe may have its two dots side by side
   }
 }
 
