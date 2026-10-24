@@ -205,10 +205,11 @@ $('levels').onclick=e=>{const b=e.target.closest('.level');if(!b)return;$('home'
 const mq=matchMedia('(prefers-color-scheme: dark)'), toggles=document.querySelectorAll('.theme-toggle'),
   syncTheme=()=>{const d=root.dataset.theme?root.dataset.theme==='dark':mq.matches;toggles.forEach(t=>t.setAttribute('aria-checked',d));draw()};
 if(stats.theme)root.dataset.theme=stats.theme;
-toggles.forEach(t=>t.onclick=()=>{stats.theme=root.dataset.theme=t.getAttribute('aria-checked')==='true'?'light':'dark';save()});
+toggles.forEach(t=>t.onclick=()=>{stats.theme=root.dataset.theme=t.getAttribute('aria-checked')==='true'?'light':'dark';
+  stats.sky=stats.theme==='dark'?'nighttime':'daytime';save();setSky()}); // the switch also pins the sky: day = the 8 AM sky, night = the 8 PM sky
 new MutationObserver(syncTheme).observe(root,{attributes:true,attributeFilter:['data-theme']});mq.addEventListener('change',syncTheme);
 
-// Sky: the background follows the clock (checked every minute) unless a sky is picked in Settings, saved with the stats.
+// Sky: the background follows the clock (checked every minute) until the Dark mode switch or Settings picks one, saved with the stats.
 const SKY=[[5,'nighttime'],[8,'sunrise'],[17,'daytime'],[20,'sunset'],[24,'nighttime']], skyAt=h=>SKY.find(([e])=>h<e)[1], // [hour it ends, sky]
   pinned=()=>SKY.some(([,s])=>s===stats.sky)&&stats.sky, // anything else (incl. 'auto') follows the clock
   setSky=()=>{const a=skyAt(new Date().getHours());$('autoSw').className=a;document.body.className=pinned()||a};
