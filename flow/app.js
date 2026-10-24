@@ -50,7 +50,7 @@ function gen(n,M){
     if(segs.length>k||segs.some(s=>s.length<3))continue;
     let pipes=segs;const L=N/k,lo=Math.max(3,L/2),hi=L*1.5;
     while(pipes.length<k){const s=pipes.reduce((a,b)=>b.length>a.length?b:a);if(s.length<6)break; // cut the longest pipe into ~N/k-cell pieces: even lengths
-      const c=Math.round(s.length/Math.max(2,Math.round(s.length/L)));pipes.splice(pipes.indexOf(s),1,s.slice(0,c),s.slice(c))}
+      const c=Math.min(s.length-3,Math.max(3,Math.round(s.length/Math.max(2,Math.round(s.length/L)))));pipes.splice(pipes.indexOf(s),1,s.slice(0,c),s.slice(c))}
     if(pipes.length<k)continue;
     // Every cut left two dots side by side; shuffle them apart. A pipe end steps onto a neighbor: in its own pipe that's a backbite
     // (the pipe winds a new way), in another pipe it takes over that pipe's tail. Lengths stay within lo..hi so no pipe hogs the board,
@@ -61,11 +61,12 @@ function gen(n,M){
       const a=Math.random()*k|0,P=pipes[a];if(Math.random()<.5)P.reverse();
       const o=nb(P.at(-1)).filter(j=>j!==P.at(-2)),w=o[Math.random()*o.length|0],b=pipes.findIndex(q=>q.includes(w)),Q=pipes[b],np=[...pipes];
       if(b<0)continue;
-      if(Q===P){const x=P.indexOf(w);np[a]=P.slice(0,x+1).concat(P.slice(x+1).reverse())}
+      if(Q===P){const i=P.indexOf(w);np[a]=P.slice(0,i+1).concat(P.slice(i+1).reverse())}
       else{if(Math.random()<.5)Q.reverse();const i=Q.indexOf(w);if(i<lo||P.length+Q.length-i>hi)continue;np[a]=P.concat(Q.slice(i));np[b]=Q.slice(0,i)}
+      if(adj(np[a][0],np[a].at(-1))||adj(np[b][0],np[b].at(-1)))continue; // a pipe's own two dots never end up side by side
       const c=touch(np);if(c<=cost||Math.random()<.05){pipes=np;cost=c} // the rare uphill step keeps the shuffle from getting stuck
     }
-    if(pipes.every(s=>!adj(s[0],s.at(-1))))return pipes; // no pipe may have its two dots side by side
+    if(pipes.every(s=>!adj(s[0],s.at(-1))))return pipes; // safety net: a cut piece that started with its dots side by side and never moved
   }
 }
 
@@ -217,5 +218,5 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   for(const sh in SHAPES)for(const [,z] of LEVELS)for(let k=0;k<5;k++){newGame(sh,z);stats.points=HINT;$('hintBtn').click();bad+=stats.points!==0||hints.size!==1;
     paths[0]=[...sol[0]];check();const t1=total;paths[0]=[sol[0][0]];check();paths[0]=[...sol[0]].reverse();check();bad+=t1!==connVal()||total!==t1; // reconnecting pays nothing
     sec=k+5;paths=sol.map(s=>[...s]);check();
-    bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
+    bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||sol.length!==flows(N,n)||sol.some(s=>s.length>2*N/sol.length)||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
   console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)}
