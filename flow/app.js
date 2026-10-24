@@ -144,7 +144,7 @@ function countUp(el,from,to,f=v=>v){const t0=el.t0=performance.now();
 function setNum(id,v){const el=$(id),from=+el.dataset.v;el.dataset.v=v;
   if(isNaN(from)||from===v){el.t0=0;el.textContent=v;return}
   pulse(el,'bump');countUp(el,from,v)}
-setInterval(()=>{if(!won&&!document.hidden&&$('home').hidden){sec++;hud()}},1000); // pauses in the background and on the home screen
+setInterval(()=>{if(!won&&!document.hidden&&$('home').hidden&&!$('setDlg').open){sec++;hud()}},1000); // pauses in the background, on the home screen and in Settings
 
 const cellAt=e=>{const r=cv.getBoundingClientRect(),c=Math.floor((e.clientX-r.left)/r.width*n),w=Math.floor((e.clientY-r.top)/r.height*n);
   ptr=[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]; // finger position for the halo
@@ -214,7 +214,7 @@ const SKY=[[5,'nighttime'],[8,'sunrise'],[17,'daytime'],[20,'sunset'],[24,'night
   setSky=()=>{const a=skyAt(new Date().getHours());$('autoSw').className=a;document.body.className=pinned()||a};
 document.querySelectorAll('.set-btn').forEach(b=>b.onclick=()=>{$('setForm').sky.value=pinned()||'auto';$('setDlg').showModal()});
 $('setForm').onchange=e=>{stats.sky=e.target.value;save();setSky()};
-setSky();setInterval(setSky,60000);
+setSky();setInterval(setSky,60000);document.addEventListener('visibilitychange',setSky); // resumed apps catch up at once
 
 const [ls,lz]=stats.last||[];
 newGame(Object.hasOwn(SHAPES,ls)?ls:'Square',LEVELS.some(l=>l[1]===lz)?lz:5);syncTheme();showHome(); // last board waits behind the home screen
