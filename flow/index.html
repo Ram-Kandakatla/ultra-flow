@@ -178,6 +178,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .shape svg{width:100%;max-width:60px;aspect-ratio:1;fill:var(--s3);transition:fill var(--t-med)}
 .shape[aria-pressed="true"]{color:var(--tx);border-color:var(--link);box-shadow:inset 0 0 0 1px var(--link)}
 .shape[aria-pressed="true"] svg{fill:var(--accent)}
+.shape small{font-size:var(--fs-xs);color:var(--link)}.shape.locked svg{opacity:.35}.shape[aria-disabled="true"]{opacity:.6;cursor:default}
 .levels{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .level{width:100%;min-height:60px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:10px 16px;text-align:left;
   background:var(--surface);border:.5px solid var(--bmed);border-radius:var(--rl);color:var(--tx);font:inherit;cursor:pointer;transition:background var(--t-fast),transform var(--t-fast) var(--ease-out)}
