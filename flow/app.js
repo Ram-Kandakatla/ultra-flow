@@ -3,7 +3,8 @@ const LEVELS=[['Easy',5],['Medium',7],['Hard',9],['Expert',11],['Godlike',13]],
   // Board shapes on an odd n x n grid; y,x are offsets from the center c. Each one was checked to generate at every level.
   // Diamonds and hearts were dropped: their checkerboard imbalance makes small sizes impossible to fill with pipes.
   SHAPES={Square:()=>true, Circle:(n,y,x,c)=>y*y+x*x<=(c+.5)**2,
-    Ring:(n,y,x)=>{const h=(n-3)/4|0;return Math.abs(y)>h||Math.abs(x)>h}, Plus:(n,y,x)=>{const h=(n+1)/6|0;return Math.abs(y)<=h||Math.abs(x)<=h}},
+    Ring:(n,y,x)=>{const h=(n-3)/4|0;return Math.abs(y)>h||Math.abs(x)>h}, Plus:(n,y,x)=>{const h=(n+1)/6|0;return Math.abs(y)<=h||Math.abs(x)<=h},
+    H:(n,y,x,c)=>{const w=Math.max(1,(n-1)/4|0);return Math.abs(x)>c-w||Math.abs(y)<w}}, // two posts and a crossbar
   maskOf=(sh,n)=>{const c=(n-1)/2;return [...Array(n*n)].map((_,i)=>SHAPES[sh](n,(i/n|0)-c,i%n-c,c))},
   PALETTE=19, flows=(N,n)=>Math.min(PALETTE,Math.max(3,Math.round(N/(n/2+2.5)))), // pipe count for a board of N cells: avg pipe = n/2+2.5 cells, so bigger boards get more, shorter pipes (square: 5,8,12,15,19)
   root=document.documentElement,
@@ -36,7 +37,7 @@ const TIER={Free:0,Common:60,Rare:150,Epic:350,Legendary:800,Mythic:1000},
   use=cat=>owned(cat,stats.use[cat])?stats.use[cat]:SHOP[cat][1][0][0],
   look=cat=>demo?.cat===cat?demo.id:use(cat); // what to draw: the equipped item, or the one being previewed
 stats.own=Array.isArray(stats.own)?stats.own:[]; // bought, as "cat:id"
-// Shapes past Square are unlocked with points, 100 more each (Circle 100, Ring 200, Plus 300); kept in stats.own as "shape:Name".
+// Shapes past Square are unlocked with points, 100 more each in list order (Circle 100, Ring 200, Plus 300, ...); kept in stats.own as "shape:Name".
 const shapeCost=sh=>Object.keys(SHAPES).indexOf(sh)*100, hasShape=sh=>!shapeCost(sh)||stats.own.includes('shape:'+sh);
 function unlock(sh){const p=shapeCost(sh);if(!Object.hasOwn(SHAPES,sh)||hasShape(sh)||!(stats.points>=p))return false;
   stats.points-=p;stats.own.push('shape:'+sh);save();return true}
@@ -360,7 +361,7 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
     bad+=!won||stats.best[key()]>sec||sol.length>PALETTE||sol.length!==flows(N,n)||sol.some(s=>s.length>2*N/sol.length)||new Set(sol.flat()).size!==N||sol.flat().some(i=>!M[i])||sol.some(s=>s.length<3||s.some((v,j)=>j&&!adj(v,s[j-1])))}
   {const b=stats.best,B=()=>$('bests').textContent;stats.best={'Ring-9':40,'Ring-13':90,'Square-13':70,'Plus-5':9};renderProfile(); // profile: Godlike clears only
     bad+=$('profBest').textContent!=='1:10'||!B().includes('1:30')||!B().includes('1:10')||!B().includes('PlusNot cleared on Godlike yet')||B().includes('0:09')||B().includes('0:40')||B().includes('—');
-    stats.best={'Plus-5':9,'Ring-13':'x'};renderProfile();bad+=(B().match(/Not cleared on Godlike yet/g)||[]).length!==4||B().includes('NaN')||$('profBest').textContent!=='None yet';
+    stats.best={'Plus-5':9,'Ring-13':'x'};renderProfile();bad+=(B().match(/Not cleared on Godlike yet/g)||[]).length!==Object.keys(SHAPES).length||B().includes('NaN')||$('profBest').textContent!=='None yet';
     stats.best={'Plus-5':9,'Ring-13':90,'Square-7':33};renderProfile();$('profLevels').querySelector('[data-i="0"]').click(); // pills switch the level shown
     bad+=$('profBestHead').textContent!=='Best Easy'||$('profBest').textContent!=='0:09'||!B().includes('0:09')||B().includes('1:30')||$('profLevels').querySelector('[aria-pressed="true"]').textContent!=='Easy';
     $('profLevels').querySelector('[data-i="1"]').click();bad+=$('profBest').textContent!=='0:33'||$('bestsHead').textContent!=='Best times · Medium 7×7';
