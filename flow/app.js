@@ -14,7 +14,7 @@ const key=()=>shape+'-'+n, levelName=z=>LEVELS.find(l=>l[1]===z)[0];
 const RM=matchMedia('(prefers-reduced-motion: reduce)'), MS={stagger:35,wave:28,pop:320,ring:450,spark:600,fade:400,lift:420,burst:1600}; // lift = .pop board CSS
 function play(k,c,dur,delay=0){if(RM.matches)return;fx.push({k,c,t0:performance.now()+delay,dur});raf||=requestAnimationFrame(loop)}
 function pulse(el,cls){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls)} // restart a one-shot CSS animation
-function loop(){raf=0;draw();if(fx.length)raf=requestAnimationFrame(loop)}
+function loop(){raf=0;draw();if(fx.length||flowing())raf=requestAnimationFrame(loop)}
 const HINT=10, fmt=s=>`${s/60|0}:${String(s%60).padStart(2,'0')}`,
   connVal=()=>{const P=2*N;return Math.round(N*10*P/(P+sec)/sol.length)}; // per connection: bigger board = higher base; halves at par (2s per cell)
 
@@ -29,6 +29,7 @@ for(const z of [5,9,11]){stats.solved['Square-'+z]??=stats[z];stats.best['Square
 const TIER={Free:0,Common:60,Rare:150,Epic:350,Legendary:800},
   SHOP={bg:['Backgrounds',[['classic','Classic','Free'],['ocean','Ocean','Common'],['forest','Forest','Common'],['dunes','Dunes','Rare'],['sakura','Sakura','Rare'],['aurora','Aurora','Epic'],['synth','Synthwave','Epic'],['sky','Time of day','Legendary']]],
     dot:['Dots',[['flat','Flat','Free'],['glossy','Glossy','Free'],['ring','Ring','Rare'],['gem','Gem','Epic'],['star','Star','Legendary']]], // Flat = the reference look
+    trail:['Trails',[['tube','Tube','Free'],['thin','Thin','Common'],['beads','Beads','Rare'],['neon','Neon','Epic'],['flow','Flowing','Legendary']]], // how pipes are stroked; each keeps its pipe's color
     win:['Win effects',[['wave','Wave','Free'],['ripple','Ripple','Common'],['confetti','Confetti','Rare'],['rainbow','Rainbow','Epic'],['fireworks','Fireworks','Legendary']]]},
   item=(cat,id)=>Object.hasOwn(SHOP,cat)&&SHOP[cat][1].find(([i])=>i===id),
   owned=(cat,id)=>!!item(cat,id)&&(TIER[item(cat,id)[2]]===0||stats.own.includes(cat+':'+id)),
@@ -122,11 +123,9 @@ function draw(){
     if(e>0&&e<1){x.globalAlpha=.55*Math.sin(Math.PI*e);x.fillStyle=wf==='rainbow'?`hsl(${dly(i)*24} 90% 60%)`:C[c];Q(i)}}));
   x.globalAlpha=1;x.strokeStyle=v('--tx')+'1f';x.lineWidth=Math.max(1,s/40);
   for(const i of cells)x.strokeRect(...R(i)); // grid lines, which also outline the shape
-  x.lineCap=x.lineJoin='round';x.lineWidth=s*.32;
-  paths.forEach((p,c)=>{x.strokeStyle=C[c];x.beginPath();p.forEach((i,j)=>x[j?'lineTo':'moveTo'](X(i),Y(i)));x.stroke()});
-  x.strokeStyle='#fff';x.globalAlpha=.13; // stacked faint strokes get lighter toward the center: pipes read as rounded tubes
-  for(const w of [.22,.12]){x.lineWidth=s*w;paths.forEach(p=>{if(p.length<2)return;x.beginPath();p.forEach((i,j)=>x[j?'lineTo':'moveTo'](X(i),Y(i)));x.stroke()})}
-  x.globalAlpha=1;
+  x.lineCap=x.lineJoin='round';const tr=look('trail');
+  paths.forEach((p,c)=>{x.beginPath();p.forEach((i,j)=>x[j?'lineTo':'moveTo'](X(i),Y(i)));TRAIL[tr](C[c],s,RM.matches?0:now); // the pipe, in the equipped trail
+    x.setLineDash([]);x.lineDashOffset=x.shadowBlur=0;x.globalAlpha=1});
   if(cur>=0&&ptr){x.globalAlpha=.2;x.fillStyle=C[cur];x.beginPath();x.arc(ptr[0],ptr[1],s*.9,0,7);x.fill();x.globalAlpha=1} // under-finger halo
   x.font=`600 ${s*(ds==='star'?.26:.36)}px ${v('--font-display')}`;x.textAlign='center';x.textBaseline='middle';
   dot.forEach((c,i)=>{if(c<0)return;const k=(el('spawn')-c*MS.stagger)/MS.pop, // new puzzle: dots pop in, staggered by color
@@ -156,14 +155,21 @@ function draw(){
 const DOT={glossy:(X,Y,r)=>x.arc(X,Y,r,0,7), flat:(X,Y,r)=>x.arc(X,Y,r*.88,0,7), ring:(X,Y,r)=>x.arc(X,Y,r*.84,0,7),
   gem:(X,Y,r)=>{for(let k=0;k<4;k++)x.lineTo(X+Math.sin(k*Math.PI/2)*r*1.2,Y-Math.cos(k*Math.PI/2)*r*1.2);x.closePath()},
   star:(X,Y,r)=>{for(let k=0;k<10;k++){const a=k*Math.PI/5,q=k%2?r*.62:r*1.3;x.lineTo(X+Math.sin(a)*q,Y-Math.cos(a)*q)}x.closePath()}},
-  rnd=j=>{const v=Math.sin(j*12.9898+78.233)*43758.5453;return v-Math.floor(v)}; // fixed per-index randomness: particles keep their paths frame to frame
+  rnd=j=>{const v=Math.sin(j*12.9898+78.233)*43758.5453;return v-Math.floor(v)}, // fixed per-index randomness: particles keep their paths frame to frame
+// Trails (Shop): stroke the pipe path already traced, in its color c, for cell size s; t (ms) moves the Flowing dashes.
+  TRAIL={tube:(c,s)=>{x.strokeStyle=c;x.lineWidth=s*.32;x.stroke();x.strokeStyle='#fff';x.globalAlpha=.13;for(const w of [.22,.12]){x.lineWidth=s*w;x.stroke()}}, // faint strokes stacked lighter toward the center read as a rounded tube
+    thin:(c,s)=>{x.strokeStyle=c;x.lineWidth=s*.14;x.stroke()},
+    beads:(c,s)=>{x.strokeStyle=c;x.lineWidth=s*.26;x.setLineDash([.001,s*.36]);x.stroke()}, // near-zero dashes with round caps draw as beads
+    neon:(c,s)=>{x.strokeStyle=x.shadowColor=c;x.lineWidth=s*.2;x.shadowBlur=s*.6;x.stroke();x.shadowBlur=0;x.strokeStyle='#fff';x.globalAlpha=.75;x.lineWidth=s*.06;x.stroke()},
+    flow:(c,s,t)=>{x.strokeStyle=c;x.globalAlpha=.45;x.lineWidth=s*.3;x.stroke();x.globalAlpha=1;x.setLineDash([s*.22,s*.34]);x.lineDashOffset=-t*s/500;x.lineWidth=s*.22;x.stroke()}}, // dashes march away from the starting dot
+  flowing=()=>look('trail')==='flow'&&!RM.matches&&$('home').hidden&&paths.some(p=>p.length>1); // keep redrawing only while it can be seen
 
 function check(){
   const done=paths.map((p,c)=>p.length>1&&dot[p.at(-1)]===c), f=done.filter(Boolean).length, filled=new Set(paths.flat()).size,
     solved=!won&&f===sol.length&&(filled===N||!!demo); // the shop's 2x2 demo only asks for the connection
   if(!won)done.forEach((d,c)=>{if(d&&!wasDone[c]){play('ring',c,MS.ring);if(solved)play('spark',c,MS.spark)} // the winning connection also sparks
     if(d&&!scored.has(c)){scored.add(c);total+=connVal()}}); // score: first connection of each color only
-  wasDone=done;
+  wasDone=done;if(flowing())raf||=requestAnimationFrame(loop); // a Flowing trail starts moving with the first pipe
   if(solved){won=1;cur=-1;
     if(!demo){earned=Math.round(total/20);stats.points+=earned; // a demo pays nothing and counts nothing
       const k=key();stats.solved[k]=(stats.solved[k]||0)+1;newRec=!(stats.best[k]<=sec);if(newRec)stats.best[k]=sec;save()}
@@ -171,7 +177,7 @@ function check(){
     pulse(cv,'pop');play(burst?wf:'win',null,dur,MS.lift); // board pops out, then the equipped win effect plays
     if(!demo)setTimeout(()=>won===1&&showWin(),RM.matches?400:MS.lift+dur+150)}
   if(demo){const nm=item(demo.cat,demo.id)[1];hud();return $('demoSt').textContent=demo.cat==='dot'?(won?`${nm} dots, connected`:`Join the two dots to try ${nm}`)
-    :demo.cat==='bg'?`${nm} preview`:`${nm} on a solved board${RM.matches?' (effects are off under Reduce Motion)':''}`}
+    :demo.cat==='bg'?`${nm} preview`:demo.cat==='trail'?(won?`${nm} trail, connected`:`Draw the last pipe to try ${nm}`):`${nm} on a solved board${RM.matches?' (effects are off under Reduce Motion)':''}`}
   $('st').textContent=won===2?'Solution shown. Tap Done for a new one':won?`${fmt(sec)} · ${hints.size} hint${hints.size===1?'':'s'} used`:`Flows ${f}/${sol.length} · Pipe ${Math.round(filled*100/N)}%`;
   $('st').className=won===1?'win':'';$('best').textContent=`${shape} · ${levelName(n)} ${n}×${n} · solved ${stats.solved[key()]||0}`;hud();
 }
@@ -265,13 +271,13 @@ $('tab-shop').onclick=e=>{const v=e.target.closest('[data-pv]');if(v){const [c,i
   if(!owned(cat,id)&&!b.dataset.sure){renderShop();const c=at();c.dataset.sure=1;c.textContent='Tap again to buy';c.focus();return}
   buy(cat,id);renderShop();at().focus()};
 // Shop previews: the game screen runs a demo board while the real board waits in `saved`; Back returns to the same shop spot.
-// Dots: a 2x2 to connect. Win effects: a 4x4 that solves itself. Backgrounds: the page wears it for 4.5s behind a half-played 4x4 and the HUD.
+// Dots: a 2x2 to connect. Trails: a 4x4 with the last pipe left to draw. Win effects: a 4x4 that solves itself. Backgrounds: the page wears it for 4.5s behind a half-played 4x4 and the HUD.
 const DEMO4=[[0,1,2,3,7,11],[4,5,6,10],[12,8,9,13,14,15]]; // three pipes filling a 4x4
 function startDemo(cat,id){
   if(!demo){saved={shape,n,M,N,cells,dot,sol,paths,won,sec,hints,earned,scored,total,newRec,wasDone};demo={top:$('home').scrollTop}}
   clearTimeout(demo.auto);Object.assign(demo,{cat,id});
   sol=cat==='dot'?[[0,1,3]]:DEMO4;n=cat==='dot'?2:4;N=n*n;M=Array(N).fill(1);cells=[...M.keys()];dot=Array(N).fill(-1);sol.forEach((s,c)=>dot[s[0]]=dot[s.at(-1)]=c);
-  paths=sol.map((s,c)=>cat==='bg'&&c<2?[...s]:[]);wasDone=paths.map(p=>p.length>1);won=0;cur=-1;sec=total=0;hints=new Set();scored=new Set();fx=[];
+  paths=sol.map((s,c)=>(cat==='bg'||cat==='trail')&&c<2?[...s]:[]);wasDone=paths.map(p=>p.length>1);won=0;cur=-1;sec=total=0;hints=new Set();scored=new Set();fx=[];
   if(cat==='bg'){document.body.style.transitionDuration='.4s';setLook()} // not the 3s fade: the preview is short
   $('home').hidden=true;$('game').inert=false;$('game').className='demo demo-'+cat;delete $('sc').dataset.v;play('spawn',null,MS.pop+MS.stagger*sol.length);resize();
   demo.auto=cat==='bg'?setTimeout(endDemo,4500):cat==='win'&&setTimeout(()=>{paths=sol.map(s=>[...s]);draw();check()},700)} // win effects play on their own
@@ -339,6 +345,8 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   {const p=stats.points,s0=sol,sv=JSON.stringify(stats.solved);startDemo('dot','star');paths=[[0,1,3]];check(); // shop demo: wins, pays nothing, gives the real board back
     bad+=n!==2||!won||look('dot')!=='star'||stats.points!==p||JSON.stringify(stats.solved)!==sv||$('demoSt').textContent!=='Star dots, connected';
     endDemo();bad+=sol!==s0||look('dot')!==use('dot')||$('home').hidden||$('tab-shop').hidden;
+    startDemo('trail','flow');bad+=n!==4||paths.filter(p=>p.length).length!==2||look('trail')!=='flow'||!RM.matches&&!flowing()||$('demoSt').textContent!=='Draw the last pipe to try Flowing';
+    paths=sol.map(s=>[...s]);check();bad+=!won||stats.points!==p||$('demoSt').textContent!=='Flowing trail, connected';endDemo();bad+=look('trail')!==use('trail')||flowing(); // trail demo
     startDemo('win','rainbow');bad+=n!==4||new Set(sol.flat()).size!==16||won;paths=sol.map(s=>[...s]);check();bad+=!won||stats.points!==p;endDemo(); // 4x4 win demo
     startDemo('bg','ocean');$('hintBtn').click();bad+=!document.body.classList.contains('theme-ocean')||n!==4||won||$('demoSt').textContent!=='Ocean preview'||stats.points!==p||hints.size;
     endDemo();bad+=document.body.classList.contains('theme-ocean')||sol!==s0;tab('play')}

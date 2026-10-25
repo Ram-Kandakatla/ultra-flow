@@ -234,6 +234,13 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .dot-ring::before{background:none;box-shadow:inset 0 0 0 5px var(--d)}
 .dot-gem::before{border-radius:4px;transform:rotate(45deg) scale(.82)}
 .dot-star::before{width:40px;height:40px;border-radius:0;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.pv-trail{background:var(--s2)}
+.pv-trail::before{content:'';width:40px;height:12px;border-radius:6px;background:linear-gradient(#fff4,#fff0 70%),var(--d)} /* Tube */
+.trail-thin::before{height:5px;background:var(--d)}
+.trail-beads::before{height:11px;border-radius:0;background:radial-gradient(circle,var(--d) 0 4.5px,#0000 5px) 0 50%/13px 11px repeat-x}
+.trail-neon::before{height:7px;background:linear-gradient(#fff,#fff) 50%/100% 2px no-repeat,var(--d);box-shadow:0 0 10px var(--d)}
+.trail-flow::before{height:11px;background:repeating-linear-gradient(90deg,var(--d) 0 8px,color-mix(in srgb,var(--d) 40%,transparent) 8px 16px);animation:march 1s linear infinite}
+@keyframes march{to{background-position:16px 0}}
 .win-wave{background:repeating-linear-gradient(135deg,var(--p0) 0 8px,var(--p1) 8px 16px,var(--p2) 16px 24px,var(--p3) 24px 32px)}
 .win-ripple{background:repeating-radial-gradient(circle,var(--accent) 0 3px,var(--s2) 3px 8px)}
 .win-confetti{background:radial-gradient(circle at 26% 30%,var(--p0) 0 4px,#0000 5px),radial-gradient(circle at 70% 24%,var(--p1) 0 4px,#0000 5px),radial-gradient(circle at 46% 58%,var(--p3) 0 4px,#0000 5px),
