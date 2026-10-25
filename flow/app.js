@@ -215,8 +215,9 @@ $('doneBtn').onclick=()=>{ // leaving mid-puzzle or after Solution; a real win g
   $('dh').textContent=won?'Solution shown':'Leave this puzzle?';$('keepBtn').textContent=won?'View board':'Keep playing';
   $('dlg').returnValue='';if(!$('dlg').open)$('dlg').showModal();
 };
-function showWin(){$('solBtn').hidden=$('doneBtn').hidden=true;$('winBar').hidden=false;$('nextBtn').focus()}
-$('nextBtn').onclick=()=>newGame(shape,n);$('lvlBtn').onclick=$('homeBtn').onclick=()=>showHome();
+const nextLevel=()=>LEVELS.find(l=>l[1]>n); // undefined on Godlike
+function showWin(){$('solBtn').hidden=$('doneBtn').hidden=true;$('diffBtn').hidden=!nextLevel();$('winBar').hidden=false;$('nextBtn').focus();resize()} // resize: the taller bar leaves the board less room
+$('nextBtn').onclick=()=>newGame(shape,n);$('diffBtn').onclick=()=>newGame(shape,nextLevel()[1]);$('lvlBtn').onclick=$('homeBtn').onclick=()=>showHome();
 $('dlg').onclose=()=>{const r=$('dlg').returnValue;if(r==='go')newGame(shape,n);if(r==='home')showHome()};
 $('hintBtn').onclick=()=>{
   if(won||demo)return; // a background preview shows the HUD, but its hint isn't for sale
@@ -341,5 +342,7 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
     startDemo('bg','ocean');$('hintBtn').click();bad+=!document.body.classList.contains('theme-ocean')||n!==4||won||$('demoSt').textContent!=='Ocean preview'||stats.points!==p||hints.size;
     endDemo();bad+=document.body.classList.contains('theme-ocean')||sol!==s0;tab('play')}
   showWin();bad+=$('winBar').hidden||!$('doneBtn').hidden;newGame(shape,n);bad+=!$('winBar').hidden||$('doneBtn').hidden; // win bar swaps in, a new board swaps it out
+  newGame(shape,5);showWin();bad+=$('diffBtn').hidden;$('diffBtn').click();bad+=n!==7||!$('winBar').hidden; // Next difficulty: one level up, on a new board
+  newGame(shape,13);showWin();bad+=!$('diffBtn').hidden; // nothing above Godlike
   for(const id of ['lvlBtn','homeBtn']){$('home').hidden=true;$(id).click();bad+=$('home').hidden} // both win-bar pills open the home screen
   console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)}
