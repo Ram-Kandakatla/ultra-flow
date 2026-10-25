@@ -230,9 +230,10 @@ $('solBtn').onclick=()=>{if(won)return;paths=sol.map(s=>[...s]);won=2;cur=-1;dra
 
 // Home screen: shape tiles (previewed from the real 9x9 mask) and one row per level with that shape's record and solves.
 const preview=sh=>'<svg viewBox="0 0 9 9" aria-hidden="true">'+maskOf(sh,9).map((on,i)=>on?`<rect x="${i%9+.08}" y="${(i/9|0)+.08}" width=".84" height=".84" rx=".2"/>`:'').join('')+'</svg>';
+const LOCK='<svg class="lock" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 function renderHome(){
   $('shapes').innerHTML=Object.keys(SHAPES).map(sh=>hasShape(sh)?`<button class="shape" data-shape="${sh}" aria-pressed="${sh===pick}">${preview(sh)}${sh}</button>`
-    :`<button class="shape locked" data-shape="${sh}"${stats.points<shapeCost(sh)?' aria-disabled="true"':''}>${preview(sh)}${sh}<small>Unlock · ${shapeCost(sh)}</small></button>`).join('');
+    :`<button class="shape locked" data-shape="${sh}"${stats.points<shapeCost(sh)?' aria-disabled="true"':''}><span class="lockwrap">${preview(sh)}${LOCK}</span>${sh}<small>Unlock · ${shapeCost(sh)}</small></button>`).join('');
   $('levels').innerHTML=LEVELS.map(([name,z])=>{const k=pick+'-'+z,b=stats.best[k],f=flows(maskOf(pick,z).filter(Boolean).length,z);
     return `<li><button class="level" data-n="${z}"><b>${name}</b><span class="sz">${z}×${z}<span class="flows" role="img" aria-label="${f} colors">${[...Array(f)].map((_,c)=>`<i style="background:var(--p${c})"></i>`).join('')}</span></span><span class="rec">${b!=null?'Record '+fmt(b):'No record yet'}<br>${+stats.solved[k]||0} solved</span></button></li>`}).join('');
   $('ptsLine').textContent=`${stats.points} points · a hint costs ${HINT} · unlock shapes or spend in the Shop`;
