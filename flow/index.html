@@ -103,7 +103,8 @@ header,.bar{display:flex;align-items:center;gap:8px}
 .stats span{font:700 var(--fs-num)/1 var(--font-display);letter-spacing:-.5px;transform-origin:left center}
 .bump{animation:bump var(--t-med) var(--spring)}
 @keyframes bump{40%{transform:scale(1.2)}}
-#pts{color:var(--orange)} /* reward color; 22px bold is large text, so 3:1 is the bar */
+#pts,#ptsGain{color:var(--orange)}
+#ptsGain{font:600 var(--fs-sm)/1 var(--font-display)}#ptsGain:empty{display:none} /* points earned on a win, under the total */ /* reward color; 22px bold is large text, so 3:1 is the bar */
 #hintBtn{margin-left:auto}
 #wrap{flex:1;min-height:0;max-height:100vw;width:100%;display:grid;place-items:center} /* no overflow clip: the win pop grows past it.
   max-height: on tall phones the whole column centers instead of the board floating in a stretched gap */
@@ -292,7 +293,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
     <button class="theme-toggle" role="switch" aria-checked="false">Dark mode<span class="toggle-track"><span class="toggle-thumb"></span></span></button>
     <button class="btn btn-ghost icon-btn set-btn" aria-label="Settings" title="Settings"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="3"/><circle cx="8" cy="17" r="3"/></svg></button>
   </header>
-  <section id="hud" class="card stats" aria-label="Game stats"><div><b>Time</b><span id="tm"></span></div><div><b>Score</b><span id="sc"></span></div><div><b>Points</b><span id="pts"></span></div><button class="btn btn-sample" id="hintBtn">Hint −10</button></section>
+  <section id="hud" class="card stats" aria-label="Game stats"><div><b>Time</b><span id="tm"></span></div><div><b>Score</b><span id="sc"></span></div><div><b>Points</b><span id="pts"></span><small id="ptsGain"></small></div><div><b id="recHead">Record</b><span id="rec"></span></div><button class="btn btn-sample" id="hintBtn">Hint −10</button></section>
   <main id="wrap"><canvas id="cv" aria-label="Flow puzzle board"></canvas></main>
   <div class="bar"><span id="st" aria-live="polite"></span><button class="btn btn-ghost" id="solBtn">Solution</button><button class="btn btn-quiet" id="doneBtn">Done</button></div>
   <div class="bar" id="demoBar"><span id="demoSt" aria-live="polite"></span><button class="btn btn-ghost" id="againBtn">Again</button><button class="btn btn-primary" id="backBtn">← Back to shop</button></div>
