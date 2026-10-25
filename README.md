@@ -34,7 +34,7 @@ Flow is a web app, so there's nothing to download from an app store. Open the [l
 
 1. Tap the **Share** button (the square with an arrow pointing up) in the toolbar.
 2. Scroll down and tap **Add to Home Screen**.
-3. Leave the name as "Flow" and tap **Add**.
+3. Leave the name as "Ultra Flow" and tap **Add**.
 
 ### Android (Chrome)
 
