@@ -27,7 +27,7 @@ for(const z of [5,9,11]){stats.solved['Square-'+z]??=stats[z];stats.best['Square
 
 // Shop: cosmetics bought with points, priced by tier. Each category's first item is free and equipped until another is picked.
 const TIER={Free:0,Common:60,Rare:150,Epic:350,Legendary:800,Mythic:1000},
-  SHOP={bg:['Backgrounds',[['classic','Classic','Free'],['ocean','Ocean','Common'],['forest','Forest','Common'],['dunes','Dunes','Rare'],['sakura','Sakura','Rare'],['aurora','Aurora','Epic'],['synth','Synthwave','Epic'],['sky','Time of day','Legendary'],['nightday','Night & Day','Legendary'],['photo','Your photo','Mythic']]],
+  SHOP={bg:['Backgrounds',[['classic','Classic','Free'],['ocean','Ocean','Common'],['forest','Forest','Common'],['dunes','Dunes','Rare'],['sakura','Sakura','Rare'],['aurora','Aurora','Epic'],['synth','Synthwave','Epic'],['nightday','Night & Day','Legendary'],['sky','Time of day','Mythic'],['photo','Your photo','Mythic']]],
     dot:['Dots',[['flat','Flat','Free'],['glossy','Glossy','Free'],['ring','Ring','Rare'],['gem','Gem','Epic'],['star','Star','Legendary']]], // Flat = the reference look
     trail:['Trails',[['tube','Tube','Free'],['thin','Thin','Common'],['beads','Beads','Rare'],['neon','Neon','Epic'],['flow','Flowing','Legendary']]], // how pipes are stroked; each keeps its pipe's color
     win:['Win effects',[['wave','Wave','Free'],['ripple','Ripple','Common'],['confetti','Confetti','Rare'],['rainbow','Rainbow','Epic'],['fireworks','Fireworks','Legendary']]]},
