@@ -4,7 +4,8 @@ const LEVELS=[['Easy',5],['Medium',7],['Hard',9],['Expert',11],['Godlike',13]],
   // Diamonds and hearts were dropped: their checkerboard imbalance makes small sizes impossible to fill with pipes.
   SHAPES={Square:()=>true, Circle:(n,y,x,c)=>y*y+x*x<=(c+.5)**2,
     Ring:(n,y,x)=>{const h=(n-3)/4|0;return Math.abs(y)>h||Math.abs(x)>h}, Plus:(n,y,x)=>{const h=(n+1)/6|0;return Math.abs(y)<=h||Math.abs(x)<=h},
-    H:(n,y,x,c)=>{const w=Math.max(1,(n-1)/4|0);return Math.abs(x)>c-w||Math.abs(y)<w}}, // two posts and a crossbar
+    H:(n,y,x,c)=>{const w=Math.max(1,(n-1)/4|0);return Math.abs(x)>c-w||Math.abs(y)<w}, // two posts and a crossbar
+    Arch:(n,y,x,c)=>{const w=Math.max(2,(n+1)/4|0);return y<-c+w||Math.abs(x)>c-w}}, // a lintel on two legs, like a doorway
   maskOf=(sh,n)=>{const c=(n-1)/2;return [...Array(n*n)].map((_,i)=>SHAPES[sh](n,(i/n|0)-c,i%n-c,c))},
   PALETTE=19, flows=(N,n)=>Math.min(PALETTE,Math.max(3,Math.round(N/(n/2+2.5)))), // pipe count for a board of N cells: avg pipe = n/2+2.5 cells, so bigger boards get more, shorter pipes (square: 5,8,12,15,19)
   root=document.documentElement,
