@@ -277,7 +277,8 @@ $('toShop').onclick=()=>tab('shop');
 // best time on that difficulty (a shape not cleared on it says so; times from other levels are never shown here).
 let profLvl=LEVELS.length-1;
 function renderProfile(){const [nm,z]=LEVELS[profLvl],t=sh=>+stats.best[sh+'-'+z],ok=sh=>stats.best[sh+'-'+z]!=null&&Number.isFinite(t(sh)),done=Object.keys(SHAPES).filter(ok);
-  $('profLevels').innerHTML=LEVELS.map(([l],i)=>`<button data-i="${i}" aria-pressed="${i===profLvl}">${l}</button>`).join('');
+  if(!$('profLevels').children.length)$('profLevels').innerHTML=LEVELS.map(([l],i)=>`<button data-i="${i}">${l}</button>`).join(''); // built once, so a tapped pill keeps focus
+  for(const b of $('profLevels').children)b.setAttribute('aria-pressed',+b.dataset.i===profLvl);
   $('profPts').textContent=+stats.points||0;$('profBestHead').textContent=`Best ${nm}`;
   $('profBest').textContent=done.length?fmt(Math.min(...done.map(t))):'None yet';$('bestsHead').textContent=`Best times · ${nm} ${z}×${z}`;
   $('bests').innerHTML=Object.keys(SHAPES).map(sh=>`<li>${preview(sh)}<span>${sh}<small>${ok(sh)?`${+stats.solved[sh+'-'+z]||0} solved`:`Not cleared on ${nm} yet`}</small></span>${ok(sh)?`<b>${fmt(t(sh))}</b>`:''}</li>`).join('');
