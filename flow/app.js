@@ -35,6 +35,10 @@ const TIER={Free:0,Common:60,Rare:150,Epic:350,Legendary:800},
   use=cat=>owned(cat,stats.use[cat])?stats.use[cat]:SHOP[cat][1][0][0],
   look=cat=>demo?.cat===cat?demo.id:use(cat); // what to draw: the equipped item, or the one being previewed
 stats.own=Array.isArray(stats.own)?stats.own:[]; // bought, as "cat:id"
+// Shapes past Square are unlocked with points, 100 more each (Circle 100, Ring 200, Plus 300); kept in stats.own as "shape:Name".
+const shapeCost=sh=>Object.keys(SHAPES).indexOf(sh)*100, hasShape=sh=>!shapeCost(sh)||stats.own.includes('shape:'+sh);
+function unlock(sh){const p=shapeCost(sh);if(!Object.hasOwn(SHAPES,sh)||hasShape(sh)||!(stats.points>=p))return false;
+  stats.points-=p;stats.own.push('shape:'+sh);save();return true}
 stats.use=stats.use&&typeof stats.use==='object'&&!Array.isArray(stats.use)?stats.use:{}; // equipped id per category
 function buy(cat,id){const it=item(cat,id);if(!it)return false; // owned: just equip; otherwise pay first
   if(!owned(cat,id)){const p=TIER[it[2]];if(!(stats.points>=p))return false;stats.points-=p;stats.own.push(cat+':'+id)}
@@ -161,7 +165,7 @@ function check(){
     if(d&&!scored.has(c)){scored.add(c);total+=connVal()}}); // score: first connection of each color only
   wasDone=done;
   if(solved){won=1;cur=-1;
-    if(!demo){earned=Math.round(total/10);stats.points+=earned; // a demo pays nothing and counts nothing
+    if(!demo){earned=Math.round(total/20);stats.points+=earned; // a demo pays nothing and counts nothing
       const k=key();stats.solved[k]=(stats.solved[k]||0)+1;newRec=!(stats.best[k]<=sec);if(newRec)stats.best[k]=sec;save()}
     const wf=look('win'),burst=wf==='confetti'||wf==='fireworks',dur=burst?MS.burst:MS.wave*(2*n-2)+MS.pop;
     pulse(cv,'pop');play(burst?wf:'win',null,dur,MS.lift); // board pops out, then the equipped win effect plays
@@ -227,10 +231,11 @@ $('solBtn').onclick=()=>{if(won)return;paths=sol.map(s=>[...s]);won=2;cur=-1;dra
 // Home screen: shape tiles (previewed from the real 9x9 mask) and one row per level with that shape's record and solves.
 const preview=sh=>'<svg viewBox="0 0 9 9" aria-hidden="true">'+maskOf(sh,9).map((on,i)=>on?`<rect x="${i%9+.08}" y="${(i/9|0)+.08}" width=".84" height=".84" rx=".2"/>`:'').join('')+'</svg>';
 function renderHome(){
-  $('shapes').innerHTML=Object.keys(SHAPES).map(sh=>`<button class="shape" data-shape="${sh}" aria-pressed="${sh===pick}">${preview(sh)}${sh}</button>`).join('');
+  $('shapes').innerHTML=Object.keys(SHAPES).map(sh=>hasShape(sh)?`<button class="shape" data-shape="${sh}" aria-pressed="${sh===pick}">${preview(sh)}${sh}</button>`
+    :`<button class="shape locked" data-shape="${sh}"${stats.points<shapeCost(sh)?' aria-disabled="true"':''}>${preview(sh)}${sh}<small>Unlock · ${shapeCost(sh)}</small></button>`).join('');
   $('levels').innerHTML=LEVELS.map(([name,z])=>{const k=pick+'-'+z,b=stats.best[k],f=flows(maskOf(pick,z).filter(Boolean).length,z);
     return `<li><button class="level" data-n="${z}"><b>${name}</b><span class="sz">${z}×${z}<span class="flows" role="img" aria-label="${f} colors">${[...Array(f)].map((_,c)=>`<i style="background:var(--p${c})"></i>`).join('')}</span></span><span class="rec">${b!=null?'Record '+fmt(b):'No record yet'}<br>${+stats.solved[k]||0} solved</span></button></li>`}).join('');
-  $('ptsLine').textContent=`${stats.points} points · a hint costs ${HINT} · spend the rest in the Shop`;
+  $('ptsLine').textContent=`${stats.points} points · a hint costs ${HINT} · unlock shapes or spend in the Shop`;
 }
 function showHome(){pick=shape;renderHome();tab('play');$('home').hidden=false;$('game').inert=true}
 function tab(t){for(const b of $('tabs').children)b.setAttribute('aria-pressed',b.dataset.tab===t);
@@ -274,7 +279,11 @@ function endDemo(){const {cat,id,top,auto}=demo;clearTimeout(auto);demo=null;
   $('home').hidden=false;$('game').inert=true;tab('shop');$('home').scrollTop=top;
   $('tab-shop').querySelector(`.peek-btn[data-pv="${cat}:${id}"]`)?.focus({preventScroll:true})}
 $('againBtn').onclick=()=>startDemo(demo.cat,demo.id);$('backBtn').onclick=endDemo;
-$('shapes').onclick=e=>{const b=e.target.closest('.shape');if(!b)return;pick=b.dataset.shape;renderHome();$('shapes').querySelector(`[data-shape="${pick}"]`).focus()};
+$('shapes').onclick=e=>{const b=e.target.closest('.shape');if(!b)return;const sh=b.dataset.shape,at=()=>$('shapes').querySelector(`[data-shape="${sh}"]`);
+  if(!hasShape(sh)){if(b.getAttribute('aria-disabled'))return $('ptsLine').textContent=`${sh} unlocks at ${shapeCost(sh)} points. You have ${stats.points}`;
+    if(!b.dataset.sure){renderHome();const c=at();c.dataset.sure=1;c.lastChild.textContent='Tap again to unlock';c.focus();return} // two taps, like the Shop
+    unlock(sh)}
+  pick=sh;renderHome();at().focus()};
 $('levels').onclick=e=>{const b=e.target.closest('.level');if(!b)return;$('home').hidden=true;$('game').inert=false;newGame(pick,+b.dataset.n)};
 
 // Theme: follows the system until a switch is used, then the choice is saved with the stats (GPA-calc behavior).
@@ -298,7 +307,7 @@ $('setForm').onchange=e=>{if(e.target.id==='letters')stats.letters=e.target.chec
 setLook();setInterval(setLook,60000);document.addEventListener('visibilitychange',setLook); // resumed apps catch up at once
 
 const [ls,lz]=stats.last||[];
-newGame(Object.hasOwn(SHAPES,ls)?ls:'Square',LEVELS.some(l=>l[1]===lz)?lz:5);syncTheme();showHome(); // last board waits behind the home screen
+newGame(Object.hasOwn(SHAPES,ls)&&hasShape(ls)?ls:'Square',LEVELS.some(l=>l[1]===lz)?lz:5);syncTheme();showHome(); // last board waits behind the home screen
 document.fonts?.ready.then(draw); // dot letters use the display face once it loads
 
 // Self-check: open with #test. Every shape x level: hints, scoring, records, and the generated solution through the win check.
@@ -321,6 +330,8 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   bad+=!buy('bg','dunes')||stats.points!==0||!buy('bg','classic')||use('bg')!=='classic'||buy('bg','nope')||buy('toString','x');
   for(const cat in SHOP)for(const [id] of SHOP[cat][1]){stats.points=1e4;bad+=!buy(cat,id)||use(cat)!==id; // every cosmetic equips and draws
     fx=[{k:id==='confetti'||id==='fireworks'?id:'win',t0:performance.now()-400,dur:MS.burst}];draw()}
+  stats.own=[];stats.points=199;bad+=!hasShape('Square')||hasShape('Circle')||unlock('Square')||unlock('Ring')||!unlock('Circle')||stats.points!==99||!hasShape('Circle')||unlock('Circle'); // shapes: 100 steps, pay once
+  stats.points=shapeCost('Plus');bad+=shapeCost('Plus')!==300||!unlock('Plus')||stats.points!==0||hasShape('Ring')||unlock('Nope');
   [stats.points,stats.own,stats.use]=keep;fx=[];setLook();draw();
   {const p=stats.points,s0=sol,sv=JSON.stringify(stats.solved);startDemo('dot','star');paths=[[0,1,3]];check(); // shop demo: wins, pays nothing, gives the real board back
     bad+=n!==2||!won||look('dot')!=='star'||stats.points!==p||JSON.stringify(stats.solved)!==sv||$('demoSt').textContent!=='Star dots, connected';
