@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ultra Flow">
 <meta name="theme-color" content="#f7f4ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1d1d1d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#1a1830" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preload" href="fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
@@ -16,7 +16,7 @@
 <style>
 @font-face{font-family:'IBM Plex Sans';font-weight:100 700;font-display:swap;src:url(fonts/ibm-plex-sans.woff2) format('woff2')} /* variable, latin only */
 @font-face{font-family:'Space Grotesk';font-weight:300 700;font-display:swap;src:url(fonts/space-grotesk.woff2) format('woff2')}
-/* Look: graphite (dark, colors measured from the reference screenshot) and warm paper (light) form the free Classic background; the Shop sells others (body class theme-*).
+/* Look: night indigo (dark, the Admissions-AI night sky: indigo ramp, yellow stars, a crescent moon) and warm paper (light) form the free Classic background; the Shop sells others (body class theme-*).
    Tone (Dark mode switch, else the system) sets ink, pipe colors and the panel base --panel. The background sets the page gradient,
    the text sitting on it (--text-color) and --accent. Panels are --panel at 84%, so every background tints them; pills are accent
    tinted, so both always match the background in use. Space Grotesk display + IBM Plex Sans body, 8/16px radii, pill buttons.
@@ -33,13 +33,13 @@
   --font-display:'Space Grotesk',var(--font-body);
   padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#1d1d1d;--panel:#232228;--border:rgba(255,255,255,.07);--bmed:rgba(255,255,255,.17);--lk:80%;
-  --tx:#ffffff;--txm:#b1b1b1;--green:#4ec668;--blue:#858bff;--orange:#f5a742;--accent:#cf9f5b;--link0:#cba47b;
+  --bg:#1a1830;--panel:#24223f;--border:rgba(226,222,248,.11);--bmed:rgba(226,222,248,.19);--lk:80%;--night:1;
+  --tx:#f0f0f5;--txm:#b6b4cb;--green:#6acb87;--blue:#93b4f7;--orange:#f7b264;--accent:#cf9f5b;--link0:#cba47b;
   --p0:#ff6b6b;--p1:#5fa8f5;--p2:#4ec668;--p3:#f5d142;--p4:#f5a742;--p5:#3fd0e0;--p6:#f062c0;--p7:#a98bff;--p8:#b5dc5a;--p9:#c9935f;--p10:#ffadc6;--p11:#9aa3ad;--p12:#f4f1ea;--p13:#3eea3e;--p14:#d445ea;--p15:#9addb1;--p16:#f4e89a;--p17:#c2a0df;--p18:#dc5a86;
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#1d1d1d;--panel:#232228;--border:rgba(255,255,255,.07);--bmed:rgba(255,255,255,.17);--lk:80%;
-  --tx:#ffffff;--txm:#b1b1b1;--green:#4ec668;--blue:#858bff;--orange:#f5a742;--accent:#cf9f5b;--link0:#cba47b;
+  --bg:#1a1830;--panel:#24223f;--border:rgba(226,222,248,.11);--bmed:rgba(226,222,248,.19);--lk:80%;--night:1;
+  --tx:#f0f0f5;--txm:#b6b4cb;--green:#6acb87;--blue:#93b4f7;--orange:#f7b264;--accent:#cf9f5b;--link0:#cba47b;
   --p0:#ff6b6b;--p1:#5fa8f5;--p2:#4ec668;--p3:#f5d142;--p4:#f5a742;--p5:#3fd0e0;--p6:#f062c0;--p7:#a98bff;--p8:#b5dc5a;--p9:#c9935f;--p10:#ffadc6;--p11:#9aa3ad;--p12:#f4f1ea;--p13:#3eea3e;--p14:#d445ea;--p15:#9addb1;--p16:#f4e89a;--p17:#c2a0df;--p18:#dc5a86;
   color-scheme:dark}
 :root{--surface:color-mix(in srgb,var(--panel) 84%,transparent);--s2:color-mix(in srgb,var(--panel) 84%,var(--tx) 8%);--s3:color-mix(in srgb,var(--panel) 76%,var(--tx) 16%)} /* see-through panels */
@@ -53,6 +53,11 @@
 .theme-classic :is(.lead,.home .eyebrow,#st,footer,.pts-line){color:var(--txm)} /* secondary text, as in the reference */
 body.theme-classic{--link:var(--link0)} /* the reference's softer tan for links and pill borders (dot stays --accent) */
 body.theme-classic{--glow:rgba(0,0,0,.3);--amb:transparent} /* flat board as in the reference: a plain drop shadow, no halo */
+/* Night sky behind Classic in the dark tone (--night, as in Admissions-AI): two star tiles of mismatched size so the repeat never shows, and one crescent moon. */
+body.theme-classic::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:var(--night,0);transition:opacity .3s;
+  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520' viewBox='0 0 520 520'><g fill='%23ffe6a3'><path opacity='.5' d='M60 35Q60 48 73 48Q60 48 60 61Q60 48 47 48Q60 48 60 35Z'/><path opacity='.4' d='M300 111Q300 120 309 120Q300 120 300 129Q300 120 291 120Q300 120 300 111Z'/><path opacity='.45' d='M180 285Q180 300 195 300Q180 300 180 315Q180 300 165 300Q180 300 180 285Z'/><path opacity='.35' d='M430 242Q430 250 438 250Q430 250 430 258Q430 250 422 250Q430 250 430 242Z'/><path opacity='.38' d='M95 420Q95 430 105 430Q95 430 95 440Q95 430 85 430Q95 430 95 420Z'/><path opacity='.3' d='M390 448Q390 455 397 455Q390 455 390 462Q390 455 383 455Q390 455 390 448Z'/></g></svg>") 0 0/520px 520px,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='730' height='730' viewBox='0 0 730 730'><g fill='%23ffe6a3'><path opacity='.32' d='M150 84Q150 90 156 90Q150 90 150 96Q150 90 144 90Q150 90 150 84Z'/><path opacity='.34' d='M560 373Q560 380 567 380Q560 380 560 387Q560 380 553 380Q560 380 560 373Z'/><path opacity='.28' d='M330 595Q330 600 335 600Q330 600 330 605Q330 600 325 600Q330 600 330 595Z'/><circle opacity='.3' cx='420' cy='60' r='2'/><circle opacity='.24' cx='90' cy='280' r='1.6'/><circle opacity='.28' cx='640' cy='180' r='1.8'/><circle opacity='.22' cx='250' cy='420' r='1.5'/><circle opacity='.3' cx='700' cy='520' r='2'/><circle opacity='.25' cx='60' cy='640' r='1.7'/><circle opacity='.23' cx='480' cy='700' r='1.6'/><circle opacity='.2' cx='200' cy='150' r='1.4'/><circle opacity='.22' cx='600' cy='650' r='1.5'/></g></svg>") 0 0/730px 730px,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170' viewBox='0 0 170 170'><path fill='%23ffe6a3' opacity='.22' d='M112 16a70 70 0 1 0 45 111A61 61 0 0 1 112 16Z'/></svg>") right 5vw top 80px/170px 170px no-repeat}
 .theme-ocean{--bg-gradient-top:#0b2540;--bg-gradient-mid:#0f4468;--bg-gradient-bottom:#136a8f;--text-color:#e8f4fb;--accent:#4fc3dc}
 .theme-forest{--bg-gradient-top:#0d2418;--bg-gradient-mid:#1a4430;--bg-gradient-bottom:#2f6a45;--text-color:#eaf5ec;--accent:#7fd48a}
 .theme-dunes{--bg-gradient-top:#fbe3bf;--bg-gradient-mid:#f2c189;--bg-gradient-bottom:#e39a5f;--text-color:#3b2412;--accent:#c2552b}
@@ -154,7 +159,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .win-bar .btn-primary{min-height:45px;font-size:var(--fs-base)} /* 45px = the reference pill's height */
 .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 #dlg .row{display:grid;grid-template-columns:1fr 1fr} /* four pills in a 2x2 grid */
-.icon-btn{padding:0 12px}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;padding:0} /* round, icon centered (an inline svg sits on the text baseline, ~2px high) */
 /* Settings: sky picker. Each swatch carries its sky's class, so it previews the real gradient. */
 .skies{display:grid;gap:6px;margin:0;padding:0;border:0}
 .skies legend{padding:0}
@@ -234,7 +239,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .pv{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;--d:var(--p1)}
 .pv-bg{background:linear-gradient(var(--bg-gradient-top),var(--bg-gradient-mid),var(--bg-gradient-bottom));box-shadow:inset 0 0 0 1px var(--bmed)}
 .pv-bg.theme-photo{background:var(--s2) center/cover}.pv-bg.theme-photo::before{content:'+';font:300 30px/1 var(--font-body);color:var(--txm)} /* no photo yet */
-.pv-bg.theme-classic{background:linear-gradient(135deg,#f7f4ef 50%,#1d1d1d 50%)} /* both tones */
+.pv-bg.theme-classic{background:linear-gradient(135deg,#f7f4ef 50%,#1a1830 50%)} /* both tones */
 .pv-dot{background:var(--s2)}
 .pv-dot::before{content:'';width:34px;height:34px;border-radius:50%;background:linear-gradient(#fff6,#fff0 45%,#0002),var(--d)}
 .dot-flat::before{background:var(--d)}
