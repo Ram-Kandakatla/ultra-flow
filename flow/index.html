@@ -144,8 +144,8 @@ dialog[open]::backdrop{animation:fade .32s cubic-bezier(.2,.8,.2,1)} /* literal:
 form{display:grid;gap:14px}
 h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 .rec-line{margin:0;font-size:var(--fs-sm);color:var(--txm)}
-.win-bar{flex-direction:column;gap:2px} /* solved: wide Next pill with Change level under it, as in the reference */
-.win-bar .btn-primary{width:100%;min-height:45px;font-size:var(--fs-base)} /* 45px = the reference pill's height */
+.win-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px} /* solved: wide Next pill with Change level and Home pills under it */
+.win-bar .btn-primary{grid-column:1/-1;min-height:45px;font-size:var(--fs-base)} /* 45px = the reference pill's height */
 .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 #dlg .row{display:grid;grid-template-columns:1fr 1fr} /* four pills in a 2x2 grid */
 .icon-btn{padding:0 12px}
@@ -294,7 +294,7 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
   <main id="wrap"><canvas id="cv" aria-label="Flow puzzle board"></canvas></main>
   <div class="bar"><span id="st" aria-live="polite"></span><button class="btn btn-ghost" id="solBtn">Solution</button><button class="btn btn-quiet" id="doneBtn">Done</button></div>
   <div class="bar" id="demoBar"><span id="demoSt" aria-live="polite"></span><button class="btn btn-ghost" id="againBtn">Again</button><button class="btn btn-primary" id="backBtn">← Back to shop</button></div>
-  <div class="bar win-bar" id="winBar" hidden><button class="btn btn-primary" id="nextBtn">Next puzzle →</button><button class="btn btn-link" id="lvlBtn">Change level</button></div>
+  <div class="bar win-bar" id="winBar" hidden><button class="btn btn-primary" id="nextBtn">Next puzzle →</button><button class="btn" id="lvlBtn">Change level</button><button class="btn" id="homeBtn">Home</button></div>
   <footer id="best"></footer>
 </div>
 <dialog id="dlg"><form method="dialog">
