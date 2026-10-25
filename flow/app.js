@@ -26,8 +26,8 @@ stats.best??={};stats.solved??={}; // keyed "Shape-n": fastest solve in seconds,
 for(const z of [5,9,11]){stats.solved['Square-'+z]??=stats[z];stats.best['Square-'+z]??=stats.best[z]} // carry over square-only counts from before shapes
 
 // Shop: cosmetics bought with points, priced by tier. Each category's first item is free and equipped until another is picked.
-const TIER={Free:0,Common:60,Rare:150,Epic:350,Legendary:800},
-  SHOP={bg:['Backgrounds',[['classic','Classic','Free'],['ocean','Ocean','Common'],['forest','Forest','Common'],['dunes','Dunes','Rare'],['sakura','Sakura','Rare'],['aurora','Aurora','Epic'],['synth','Synthwave','Epic'],['sky','Time of day','Legendary']]],
+const TIER={Free:0,Common:60,Rare:150,Epic:350,Legendary:800,Mythic:1000},
+  SHOP={bg:['Backgrounds',[['classic','Classic','Free'],['ocean','Ocean','Common'],['forest','Forest','Common'],['dunes','Dunes','Rare'],['sakura','Sakura','Rare'],['aurora','Aurora','Epic'],['synth','Synthwave','Epic'],['sky','Time of day','Legendary'],['photo','Your photo','Mythic']]],
     dot:['Dots',[['flat','Flat','Free'],['glossy','Glossy','Free'],['ring','Ring','Rare'],['gem','Gem','Epic'],['star','Star','Legendary']]], // Flat = the reference look
     trail:['Trails',[['tube','Tube','Free'],['thin','Thin','Common'],['beads','Beads','Rare'],['neon','Neon','Epic'],['flow','Flowing','Legendary']]], // how pipes are stroked; each keeps its pipe's color
     win:['Win effects',[['wave','Wave','Free'],['ripple','Ripple','Common'],['confetti','Confetti','Rare'],['rainbow','Rainbow','Epic'],['fireworks','Fireworks','Legendary']]]},
@@ -44,6 +44,27 @@ stats.use=stats.use&&typeof stats.use==='object'&&!Array.isArray(stats.use)?stat
 function buy(cat,id){const it=item(cat,id);if(!it)return false; // owned: just equip; otherwise pay first
   if(!owned(cat,id)){const p=TIER[it[2]];if(!(stats.points>=p))return false;stats.points-=p;stats.own.push(cat+':'+id)}
   stats.use[cat]=id;save();setLook();draw();return true}
+// Your photo: shrunk to a JPEG (long side 1440px) and kept in localStorage, not the 4KB stats cookie. Its colors come from a 12x12 copy:
+// top/middle/bottom bands (darkened by the scrim, which is set so white text reads on an average patch) for the page edges and Safari's
+// bars, and its most vivid color, brightened, as the accent. Returns 'ok', 'bad' (unreadable file) or 'big' (no room to save it).
+async function setPhoto(file){
+  const bm=await createImageBitmap(file).catch(()=>null);if(!bm)return 'bad';
+  const k=Math.min(1,1440/Math.max(bm.width,bm.height)),cv2=Object.assign(document.createElement('canvas'),{width:Math.max(1,Math.round(bm.width*k)),height:Math.max(1,Math.round(bm.height*k))});
+  cv2.getContext('2d').drawImage(bm,0,0,cv2.width,cv2.height);
+  const t=Object.assign(document.createElement('canvas'),{width:12,height:12}),g=t.getContext('2d');g.drawImage(cv2,0,0,12,12);
+  const d=g.getImageData(0,0,12,12).data,px=[];for(let i=0;i<d.length;i+=4)px.push([d[i],d[i+1],d[i+2]]);
+  const avg=a=>[0,1,2].map(j=>a.reduce((s,p)=>s+p[j],0)/a.length),lum=p=>(.2126*p[0]+.7152*p[1]+.0722*p[2])/255,
+    scrim=Math.min(.7,Math.max(.25,1-.2/Math.max(.01,lum(avg(px))))),hex=p=>'#'+p.map(v=>Math.round(Math.min(255,v)).toString(16).padStart(2,'0')).join(''),
+    band=r=>hex(avg(px.slice(r*48,r*48+48)).map(v=>v*(1-scrim))),sat=p=>{const M=Math.max(...p);return M?(M-Math.min(...p))/255:0},
+    v=px.reduce((b,p)=>sat(p)>sat(b)?p:b),photo={img:cv2.toDataURL('image/jpeg',.82),top:band(0),mid:band(1),bottom:band(2),
+      accent:sat(v)<.2?'#cf9f5b':hex(v.map(c=>c*230/Math.max(...v))),scrim:+scrim.toFixed(2)}; // near-gray photos keep the tan accent
+  return tryDo(()=>{localStorage.flowPhoto=JSON.stringify(photo);return true})?(hasPhoto=photoCss(),'ok'):'big'}
+// Only well-formed data goes into the stylesheet: a base64 JPEG and hex colors can't break out of the CSS.
+function photoCss(){const p=tryDo(()=>JSON.parse(localStorage.flowPhoto)),ok=!!p&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.img)
+    &&[p.top,p.mid,p.bottom,p.accent].every(c=>/^#[0-9a-f]{6}$/.test(c))&&p.scrim>=0&&p.scrim<1;
+  $('photoCss').textContent=ok?`.theme-photo{--bg-gradient-top:${p.top};--bg-gradient-mid:${p.mid};--bg-gradient-bottom:${p.bottom};--accent:${p.accent};--scrim:${p.scrim}}
+    .photo,.pv-bg.theme-photo{background-image:url("${p.img}")}.pv-bg.theme-photo::before{content:none}`:'';return ok}
+let hasPhoto=photoCss();
 function save(){const v=JSON.stringify(stats);
   tryDo(()=>document.cookie=`flowStats=${encodeURIComponent(v)};max-age=31536000;path=/;SameSite=Lax${location.protocol==='https:'?';Secure':''}`);tryDo(()=>localStorage.flowStats=v)}
 
@@ -249,7 +270,7 @@ function renderHome(){
 function showHome(){pick=shape;renderHome();tab('play');$('home').hidden=false;$('game').inert=true}
 function tab(t){for(const b of $('tabs').children)b.setAttribute('aria-pressed',b.dataset.tab===t);
   for(const k of ['play','profile','shop'])$('tab-'+k).hidden=k!==t;
-  if(t==='profile')renderProfile();if(t==='shop')renderShop();$('home').scrollTop=0}
+  if(t==='play')renderHome();if(t==='profile')renderProfile();if(t==='shop')renderShop();$('home').scrollTop=0} // each tab re-renders: points spent in the Shop show at once
 $('tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(b)tab(b.dataset.tab)};
 $('toShop').onclick=()=>tab('shop');
 // Profile: points beside the fastest time on the hardest difficulty, then one row per shape with its best time on that difficulty
@@ -263,13 +284,20 @@ function renderProfile(){const [nm,z]=LEVELS.at(-1),t=sh=>+stats.best[sh+'-'+z],
 function renderShop(){const pts=+stats.points||0,now=skyAt(new Date().getHours());
   $('tab-shop').innerHTML=`<p class="wallet"><b>${pts}</b> points · buy once, switch any time</p>`+Object.entries(SHOP).map(([cat,[title,list]])=>
     `<section><h2 class="eyebrow">${title}</h2><div class="items">${list.map(([id,name,tier])=>{const own=owned(cat,id),on=use(cat)===id,p=TIER[tier];
-      return `<div class="item card"><button class="peek-btn" data-pv="${cat}:${id}" aria-label="Preview ${name}" title="Preview">?</button><i class="pv pv-${cat} ${cat==='bg'?'theme-'+id+(id==='sky'?' '+now:''):cat+'-'+id}" data-pv="${cat}:${id}" aria-hidden="true"></i><b id="it-${cat}-${id}">${name}</b><span class="tier t-${tier}">${tier}</span>`+
-        `<button class="btn${on?' in-use':' btn-primary'}" data-cat="${cat}" data-id="${id}" aria-describedby="it-${cat}-${id}"${on||!own&&pts<p?' aria-disabled="true"':''}>${on?'In use':own?'Use':'Buy · '+p}</button></div>`}).join('')}</div></section>`).join('')}
+      const ph=id==='photo',choose=ph&&own&&!hasPhoto,pv=ph?'':` data-pv="${cat}:${id}"`; // Your photo: nothing to preview until it's yours
+      return `<div class="item card">${ph?'':`<button class="peek-btn"${pv} aria-label="Preview ${name}" title="Preview">?</button>`}<i class="pv pv-${cat} ${cat==='bg'?'theme-'+id+(id==='sky'?' '+now:''):cat+'-'+id}"${pv} aria-hidden="true"></i><b id="it-${cat}-${id}">${name}</b><span class="tier t-${tier}">${tier}</span>`+
+        (choose?`<button class="btn btn-primary" data-photo aria-describedby="it-${cat}-${id}">Choose photo</button>`
+        :`<button class="btn${on?' in-use':' btn-primary'}" data-cat="${cat}" data-id="${id}" aria-describedby="it-${cat}-${id}"${on||!own&&pts<p?' aria-disabled="true"':''}>${on?'In use':own?'Use':'Buy · '+p}</button>`)+
+        (ph&&own&&hasPhoto?`<button class="btn btn-link photo-btn" data-photo>Change photo</button>`:'')+'</div>'}).join('')}</div></section>`).join('')}
 $('tab-shop').onclick=e=>{const v=e.target.closest('[data-pv]');if(v){const [c,i]=v.dataset.pv.split(':');return startDemo(c,i)} // the ? or the icon previews
+  if(e.target.closest('[data-photo]'))return $('photoIn').click(); // Choose / Change photo
   const b=e.target.closest('button[data-cat]');if(!b||b.getAttribute('aria-disabled'))return;
   const {cat,id}=b.dataset,at=()=>$('tab-shop').querySelector(`[data-cat="${cat}"][data-id="${id}"]`);
   if(!owned(cat,id)&&!b.dataset.sure){renderShop();const c=at();c.dataset.sure=1;c.textContent='Tap again to buy';c.focus();return}
-  buy(cat,id);renderShop();at().focus()};
+  const paid=!owned(cat,id);buy(cat,id);renderShop();at()?.focus();if(id==='photo'&&paid&&!hasPhoto)$('photoIn').click()}; // just bought Your photo: pick one now
+$('photoIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  const r=await setPhoto(f);if(r==='ok')buy('bg','photo');renderShop();
+  if(r!=='ok')$('tab-shop').querySelector('.wallet').textContent=r==='bad'?"That file couldn't be opened. Try a JPG or PNG photo.":'That photo is too large to save on this device. Try a smaller one.'};
 // Shop previews: the game screen runs a demo board while the real board waits in `saved`; Back returns to the same shop spot.
 // Dots: a 2x2 to connect. Trails: a 4x4 with the last pipe left to draw. Win effects: a 4x4 that solves itself. Backgrounds: the page wears it for 4.5s behind a half-played 4x4 and the HUD.
 const DEMO4=[[0,1,2,3,7,11],[4,5,6,10],[12,8,9,13,14,15]]; // three pipes filling a 4x4
@@ -355,4 +383,15 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
   newGame(shape,5);showWin();bad+=$('diffBtn').hidden;$('diffBtn').click();bad+=n!==7||!$('winBar').hidden; // Next difficulty: one level up, on a new board
   newGame(shape,13);showWin();bad+=!$('diffBtn').hidden; // nothing above Godlike
   for(const id of ['lvlBtn','homeBtn']){$('home').hidden=true;$(id).click();bad+=$('home').hidden} // both win-bar pills open the home screen
-  console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)}
+  (async()=>{const kp=localStorage.flowPhoto,ks=[stats.points,stats.own,stats.use]; // Your photo: colors from the image, Mythic price, bad files refused
+    const c=Object.assign(document.createElement('canvas'),{width:30,height:60}),g=c.getContext('2d');
+    for(const [i,col] of ['#ff2020','#20ff20','#2020ff'].entries()){g.fillStyle=col;g.fillRect(0,i*20,30,20)}
+    const ch=(h,i)=>parseInt(h.slice(1+2*i,3+2*i),16);bad+=await setPhoto(await new Promise(r=>c.toBlob(r)))!=='ok';const p=JSON.parse(localStorage.flowPhoto);
+    bad+=!p.img.startsWith('data:image/jpeg;base64,')||ch(p.top,0)<=ch(p.top,2)||ch(p.mid,1)<=ch(p.mid,0)||ch(p.bottom,2)<=ch(p.bottom,0)||!(p.scrim>=.25&&p.scrim<=.7);
+    stats.own=[];stats.points=TIER.Mythic-1;bad+=buy('bg','photo');stats.points=TIER.Mythic;
+    bad+=!buy('bg','photo')||stats.points!==0||!document.body.classList.contains('theme-photo')||!$('photoCss').textContent.includes(p.img.slice(0,60))||getComputedStyle(document.querySelector('.photo')).display==='none';
+    bad+=await setPhoto(new Blob(['not an image'],{type:'image/png'}))!=='bad';
+    localStorage.flowPhoto=JSON.stringify({img:'data:image/jpeg;base64,x")}body{display:none',top:'#000000',mid:'#000000',bottom:'#000000',accent:'#000000',scrim:.3}); // tampered storage stays out of the CSS
+    bad+=photoCss()||$('photoCss').textContent!=='';
+    kp===undefined?delete localStorage.flowPhoto:localStorage.flowPhoto=kp;hasPhoto=photoCss();[stats.points,stats.own,stats.use]=ks;setLook();
+    console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)})()}

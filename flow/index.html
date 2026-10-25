@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Ultra Flow</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -65,8 +65,14 @@ body.theme-classic{--glow:rgba(0,0,0,.3);--amb:transparent} /* flat board as in 
 .daytime{--bg-gradient-top:#56ccf2;--bg-gradient-mid:#4ea8de;--bg-gradient-bottom:#2f80ed;--text-color:#fff;--celestial-color:#fffde6;--celestial-shadow:rgba(255,253,230,.8);--orbital-rotation:80deg} /* 8AM-5PM */
 .sunset{--bg-gradient-top:#9442fe;--bg-gradient-mid:#b83b5e;--bg-gradient-bottom:#f08a5d;--text-color:#ffcad4;--celestial-color:#ffeedd;--celestial-shadow:rgba(240,138,93,.6);--orbital-rotation:165deg} /* 5PM-8PM */
 .nighttime{--bg-gradient-top:#050b14;--bg-gradient-mid:#101f32;--bg-gradient-bottom:#1a2a3a;--text-color:#e0e6ed;--celestial-color:#f4f5f7;--celestial-shadow:rgba(255,255,255,.2);--orbital-rotation:260deg} /* 8PM-5AM: sun down, moon up */
-:is(.daytime,.sunset) :is(header,#st,#solBtn,footer,.home .eyebrow,.pts-line,.lead){text-shadow:0 1px 3px rgba(0,0,0,.35)} /* light text on the pale ends of those skies */
+:is(.daytime,.sunset,.theme-photo) :is(header,#st,#solBtn,footer,.home .eyebrow,.pts-line,.lead){text-shadow:0 1px 3px rgba(0,0,0,.35)} /* light text on the pale ends of those skies, and on photos */
 .sky{position:fixed;inset:0;z-index:-1;pointer-events:none} /* behind everything; the transparent home screen shows it too */
+/* Your photo: a fixed layer (cover-fit) under a dark scrim so white text stays readable. Until a photo is chosen it falls back to graphite;
+   #photoCss then sets the photo, its band colors (page edges, Safari's bars) and its most vivid color as the accent. */
+.theme-photo{--bg-gradient-top:#1d1d1d;--bg-gradient-mid:#1d1d1d;--bg-gradient-bottom:#1d1d1d;--text-color:#fff;--accent:#cf9f5b}
+.photo{position:fixed;inset:0;z-index:-1;pointer-events:none;background:center/cover no-repeat}
+.photo::after{content:'';position:absolute;inset:0;background:rgb(0 0 0/var(--scrim,.3))}
+body:not(.theme-photo) .photo{display:none}
 /* iOS Safari 26 ignores theme-color and tints its status bar and bottom bar from a full-width fixed element at each edge.
    These strips carry the background's end colors. app.js gives them the body's classes (so they skip its 3s fade and show
    the final color) and swaps in fresh ones on each change, which makes Safari re-sample. */
@@ -218,15 +224,18 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 /* demo board: its line and the way back; a background preview also keeps the HUD, so the panels show over it */
 .item{position:relative;display:grid;justify-items:center;align-content:start;gap:8px;padding:16px 10px 10px;text-align:center}
 .item:has(.t-Legendary){border-color:color-mix(in srgb,#f59e0b 65%,transparent)}
+.item:has(.t-Mythic){border-color:color-mix(in srgb,#e0457b 70%,transparent)}
+.photo-btn{min-height:32px;margin-top:-4px;font-size:var(--fs-xs)}
 .item b{font:600 var(--fs-base)/1.2 var(--font-display)}
 .item .btn{width:100%;padding:0 10px}
 .item .in-use{opacity:1;background:none;border-color:var(--link);color:var(--link)} /* equipped: reads as selected, not disabled */
 .item:has(.in-use){box-shadow:inset 0 0 0 1px var(--link)}
 .tier{font:600 var(--fs-xs)/1 var(--font-body);text-transform:uppercase;letter-spacing:.08em;padding:4px 8px;border-radius:999px;
   color:color-mix(in srgb,var(--t) 65%,var(--tx));background:color-mix(in srgb,var(--t) 16%,transparent)}
-.t-Free{--t:var(--txm)}.t-Common{--t:#7d8794}.t-Rare{--t:#3b82f6}.t-Epic{--t:#a855f7}.t-Legendary{--t:#f59e0b}
+.t-Free{--t:var(--txm)}.t-Common{--t:#7d8794}.t-Rare{--t:#3b82f6}.t-Epic{--t:#a855f7}.t-Legendary{--t:#f59e0b}.t-Mythic{--t:#e0457b}
 .pv{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;--d:var(--p1)}
 .pv-bg{background:linear-gradient(var(--bg-gradient-top),var(--bg-gradient-mid),var(--bg-gradient-bottom));box-shadow:inset 0 0 0 1px var(--bmed)}
+.pv-bg.theme-photo{background:var(--s2) center/cover}.pv-bg.theme-photo::before{content:'+';font:300 30px/1 var(--font-body);color:var(--txm)} /* no photo yet */
 .pv-bg.theme-classic{background:linear-gradient(135deg,#f7f4ef 50%,#1d1d1d 50%)} /* both tones */
 .pv-dot{background:var(--s2)}
 .pv-dot::before{content:'';width:34px;height:34px;border-radius:50%;background:linear-gradient(#fff6,#fff0 45%,#0002),var(--d)}
@@ -264,6 +273,8 @@ h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
 }
 </style>
 <div class="sky" aria-hidden="true"><i></i><i></i></div> <!-- sun, moon -->
+<div class="photo" aria-hidden="true"></div><style id="photoCss"></style> <!-- Your photo: the image and its colors, filled in by app.js -->
+<input type="file" id="photoIn" accept="image/*" hidden> <!-- iOS offers Photo Library, Take Photo or Choose File -->
 <div class="edge" id="edgeT" aria-hidden="true"></div><div class="edge" id="edgeB" aria-hidden="true"></div>
 <section id="home" class="home" aria-label="Flow home">
   <header>
