@@ -172,10 +172,11 @@ function check(){
     if(!demo)setTimeout(()=>won===1&&showWin(),RM.matches?400:MS.lift+dur+150)}
   if(demo){const nm=item(demo.cat,demo.id)[1];hud();return $('demoSt').textContent=demo.cat==='dot'?(won?`${nm} dots, connected`:`Join the two dots to try ${nm}`)
     :demo.cat==='bg'?`${nm} preview`:`${nm} on a solved board${RM.matches?' (effects are off under Reduce Motion)':''}`}
-  $('st').textContent=won===2?'Solution shown. Tap Done for a new one':won?`Connected · ${fmt(sec)} · +${earned} points · ${newRec?'new record':'record '+fmt(stats.best[key()])}`:`Flows ${f}/${sol.length} · Pipe ${Math.round(filled*100/N)}%`;
+  $('st').textContent=won===2?'Solution shown. Tap Done for a new one':won?`${fmt(sec)} · ${hints.size} hint${hints.size===1?'':'s'} used`:`Flows ${f}/${sol.length} · Pipe ${Math.round(filled*100/N)}%`;
   $('st').className=won===1?'win':'';$('best').textContent=`${shape} · ${levelName(n)} ${n}×${n} · solved ${stats.solved[key()]||0}`;hud();
 }
-function hud(){$('tm').textContent=fmt(sec);setNum('sc',total);setNum('pts',stats.points)}
+function hud(){$('tm').textContent=fmt(sec);setNum('sc',total);setNum('pts',stats.points);$('ptsGain').textContent=won===1&&earned?'+'+earned:'';
+  const b=stats.best[key()];$('rec').textContent=b!=null?fmt(b):'—';$('recHead').textContent=won===1&&newRec?'New record':'Record'}
 // Numbers that change pop (CSS .bump) and count to their new value.
 function countUp(el,from,to,f=v=>v){const t0=el.t0=performance.now();
   if(RM.matches||from===to)return el.textContent=f(to);
@@ -341,6 +342,7 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
     startDemo('win','rainbow');bad+=n!==4||new Set(sol.flat()).size!==16||won;paths=sol.map(s=>[...s]);check();bad+=!won||stats.points!==p;endDemo(); // 4x4 win demo
     startDemo('bg','ocean');$('hintBtn').click();bad+=!document.body.classList.contains('theme-ocean')||n!==4||won||$('demoSt').textContent!=='Ocean preview'||stats.points!==p||hints.size;
     endDemo();bad+=document.body.classList.contains('theme-ocean')||sol!==s0;tab('play')}
+  bad+=$('ptsGain').textContent!==(earned?'+'+earned:'')||$('st').textContent!==`${fmt(sec)} · 1 hint used`||$('rec').textContent!==fmt(stats.best[key()]); // win: gain under Points, record in the HUD, hints on the status line
   showWin();bad+=$('winBar').hidden||!$('doneBtn').hidden;newGame(shape,n);bad+=!$('winBar').hidden||$('doneBtn').hidden; // win bar swaps in, a new board swaps it out
   newGame(shape,5);showWin();bad+=$('diffBtn').hidden;$('diffBtn').click();bad+=n!==7||!$('winBar').hidden; // Next difficulty: one level up, on a new board
   newGame(shape,13);showWin();bad+=!$('diffBtn').hidden; // nothing above Godlike
