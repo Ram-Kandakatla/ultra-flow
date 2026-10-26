@@ -64,11 +64,12 @@ async function setPhoto(file){
     v=px.reduce((b,p)=>sat(p)>sat(b)?p:b),photo={img:cv2.toDataURL('image/jpeg',.82),top:band(0),mid:band(1),bottom:band(2),
       accent:sat(v)<.2?'#cf9f5b':hex(v.map(c=>c*230/Math.max(...v))),scrim:+scrim.toFixed(2)}; // near-gray photos keep the tan accent
   return tryDo(()=>{localStorage.flowPhoto=JSON.stringify(photo);return true})?(hasPhoto=photoCss(),'ok'):'big'}
-// Only well-formed data goes into the stylesheet: a base64 JPEG and hex colors can't break out of the CSS.
+// Only well-formed data goes into photoSheet's --photo-* tokens (styles.css uses them under .has-photo): a base64 JPEG and hex colors can't break out of the CSS.
 function photoCss(){const p=tryDo(()=>JSON.parse(localStorage.flowPhoto)),ok=!!p&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.img)
     &&[p.top,p.mid,p.bottom,p.accent].every(c=>/^#[0-9a-f]{6}$/.test(c))&&p.scrim>=0&&p.scrim<1;
-  $('photoCss').textContent=ok?`.theme-photo{--bg-gradient-top:${p.top};--bg-gradient-mid:${p.mid};--bg-gradient-bottom:${p.bottom};--accent:${p.accent};--scrim:${p.scrim}}
-    .photo,.pv-bg.theme-photo{background-image:url("${p.img}")}.pv-bg.theme-photo::before{content:none}`:'';return ok}
+  photoSheet.replaceSync(ok?`:root{--photo-img:url("${p.img}");--photo-top:${p.top};--photo-mid:${p.mid};--photo-bottom:${p.bottom};--photo-accent:${p.accent};--photo-scrim:${p.scrim}}`:'');
+  root.classList.toggle('has-photo',ok);return ok}
+const photoSheet=new CSSStyleSheet();document.adoptedStyleSheets=[photoSheet];
 let hasPhoto=photoCss();
 function save(){const v=JSON.stringify(stats);
   tryDo(()=>document.cookie=`flowStats=${encodeURIComponent(v)};max-age=31536000;path=/;SameSite=Lax${location.protocol==='https:'?';Secure':''}`);tryDo(()=>localStorage.flowStats=v)}
@@ -124,13 +125,9 @@ function newGame(sh,z){
   wasDone=[];fx=[];delete $('sc').dataset.v;play('spawn',null,MS.pop+MS.stagger*sol.length);resize(); // fx reset: old effects point at old colors
 }
 
-function resize(){
-  const w=$('wrap'),s=Math.floor(Math.min(w.clientWidth,w.clientHeight)),d=devicePixelRatio||1;
-  cv.style.width=cv.style.height=s+'px';cv.width=cv.height=Math.round(s*d);draw();check();
-  // Win pop: 1.2x in the wide layout; in the one-column layout up to 1.12x, capped so the spring's ~11% overshoot stays on screen.
-  cv.style.setProperty('--pop',WIDE.matches?1.2:Math.min(1.12,1+(innerWidth/s-1)/1.11).toFixed(3));
+function resize(){ // styles.css sizes the board; its bitmap follows at full device resolution
+  cv.width=cv.height=Math.round(cv.clientWidth*(devicePixelRatio||1));draw();check();
 }
-const WIDE=matchMedia('(min-width:700px) and (min-aspect-ratio:5/4)'); // same query as the wide-layout CSS
 
 function draw(){
   const s=cv.width/n, X=i=>(i%n+.5)*s, Y=i=>((i/n|0)+.5)*s, R=i=>[i%n*s,(i/n|0)*s,s,s],
@@ -269,7 +266,7 @@ function renderHome(){
   $('shapes').innerHTML=Object.keys(SHAPES).map(sh=>hasShape(sh)?`<button class="shape" data-shape="${sh}" aria-pressed="${sh===pick}">${preview(sh)}${sh}</button>`
     :`<button class="shape locked" data-shape="${sh}"${stats.points<shapeCost(sh)?' aria-disabled="true"':''}><span class="lockwrap">${preview(sh)}${LOCK}</span>${sh}<small>Unlock · ${shapeCost(sh)}</small></button>`).join('');
   $('levels').innerHTML=LEVELS.map(([name,z])=>{const k=pick+'-'+z,b=stats.best[k],f=flows(maskOf(pick,z).filter(Boolean).length,z);
-    return `<li><button class="level" data-n="${z}"><b>${name}</b><span class="sz">${z}×${z}<span class="flows" role="img" aria-label="${f} colors">${[...Array(f)].map((_,c)=>`<i style="background:var(--p${c})"></i>`).join('')}</span></span><span class="rec">${b!=null?'Record '+fmt(b):'No record yet'}<br>${+stats.solved[k]||0} solved</span></button></li>`}).join('');
+    return `<li><button class="level" data-n="${z}"><b>${name}</b><span class="sz">${z}×${z}<span class="flows" role="img" aria-label="${f} colors">${[...Array(f)].map((_,c)=>`<i></i>`).join('')}</span></span><span class="rec">${b!=null?'Record '+fmt(b):'No record yet'}<br>${+stats.solved[k]||0} solved</span></button></li>`}).join('');
   $('ptsLine').textContent=`${stats.points} points · a hint costs ${HINT} · unlock shapes or spend in the Shop`;
 }
 function showHome(){pick=shape;renderHome();tab('play');$('home').hidden=false;$('game').inert=true}
@@ -315,12 +312,12 @@ function startDemo(cat,id){
   clearTimeout(demo.auto);Object.assign(demo,{cat,id});
   sol=cat==='dot'?[[0,1,3]]:DEMO4;n=cat==='dot'?2:4;N=n*n;M=Array(N).fill(1);cells=[...M.keys()];dot=Array(N).fill(-1);sol.forEach((s,c)=>dot[s[0]]=dot[s.at(-1)]=c);
   paths=sol.map((s,c)=>(cat==='bg'||cat==='trail')&&c<2?[...s]:[]);wasDone=paths.map(p=>p.length>1);won=0;cur=-1;sec=total=0;hints=new Set();scored=new Set();fx=[];
-  if(cat==='bg'){document.body.style.transitionDuration='.4s';setLook()} // not the 3s fade: the preview is short
+  if(cat==='bg'){root.classList.add('quick-fade');setLook()} // not the 3s fade: the preview is short
   $('home').hidden=true;$('game').inert=false;$('game').className='demo demo-'+cat;delete $('sc').dataset.v;play('spawn',null,MS.pop+MS.stagger*sol.length);resize();
   demo.auto=cat==='bg'?setTimeout(endDemo,4500):cat==='win'&&setTimeout(()=>{paths=sol.map(s=>[...s]);draw();check()},700)} // win effects play on their own
 function endDemo(){const {cat,id,top,auto}=demo;clearTimeout(auto);demo=null;
   ({shape,n,M,N,cells,dot,sol,paths,won,sec,hints,earned,scored,total,newRec,wasDone}=saved);fx=[];cur=-1;
-  if(cat==='bg'){setLook();setTimeout(()=>demo?.cat==='bg'||(document.body.style.transitionDuration=''),400)}
+  if(cat==='bg'){setLook();setTimeout(()=>demo?.cat==='bg'||root.classList.remove('quick-fade'),400)}
   $('game').className='';delete $('sc').dataset.v;resize();
   $('home').hidden=false;$('game').inert=true;tab('shop');$('home').scrollTop=top;
   $('tab-shop').querySelector(`.peek-btn[data-pv="${cat}:${id}"]`)?.focus({preventScroll:true})}
@@ -402,9 +399,9 @@ if(location.hash==='#test'){save=()=>{};let bad=0,t0=performance.now();
     const ch=(h,i)=>parseInt(h.slice(1+2*i,3+2*i),16);bad+=await setPhoto(await new Promise(r=>c.toBlob(r)))!=='ok';const p=JSON.parse(localStorage.flowPhoto);
     bad+=!p.img.startsWith('data:image/jpeg;base64,')||ch(p.top,0)<=ch(p.top,2)||ch(p.mid,1)<=ch(p.mid,0)||ch(p.bottom,2)<=ch(p.bottom,0)||!(p.scrim>=.25&&p.scrim<=.7);
     stats.own=[];stats.points=TIER.Mythic-1;bad+=buy('bg','photo');stats.points=TIER.Mythic;
-    bad+=!buy('bg','photo')||stats.points!==0||!document.body.classList.contains('theme-photo')||!$('photoCss').textContent.includes(p.img.slice(0,60))||getComputedStyle(document.querySelector('.photo')).display==='none';
+    bad+=!buy('bg','photo')||stats.points!==0||!document.body.classList.contains('theme-photo')||!getComputedStyle(root).getPropertyValue('--photo-img').includes(p.img.slice(0,60))||getComputedStyle(document.querySelector('.photo')).display==='none';
     bad+=await setPhoto(new Blob(['not an image'],{type:'image/png'}))!=='bad';
     localStorage.flowPhoto=JSON.stringify({img:'data:image/jpeg;base64,x")}body{display:none',top:'#000000',mid:'#000000',bottom:'#000000',accent:'#000000',scrim:.3}); // tampered storage stays out of the CSS
-    bad+=photoCss()||$('photoCss').textContent!=='';
+    bad+=photoCss()||root.classList.contains('has-photo')||getComputedStyle(root).getPropertyValue('--photo-img')!=='';
     kp===undefined?delete localStorage.flowPhoto:localStorage.flowPhoto=kp;hasPhoto=photoCss();[stats.points,stats.own,stats.use]=ks;setLook();
     console.log(bad?`SELFTEST FAIL ${bad}`:`SELFTEST OK ${Math.round(performance.now()-t0)}ms`)})()}

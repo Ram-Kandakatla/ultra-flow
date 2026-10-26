@@ -1,0 +1,280 @@
+@font-face{font-family:'IBM Plex Sans';font-weight:100 700;font-display:swap;src:url(fonts/ibm-plex-sans.woff2) format('woff2')} /* variable, latin only */
+@font-face{font-family:'Space Grotesk';font-weight:300 700;font-display:swap;src:url(fonts/space-grotesk.woff2) format('woff2')}
+/* Look: graphite (dark, colors measured from the reference screenshot) and warm paper (light) form the free Classic background; the Shop sells others (body class theme-*).
+   Tone (Dark mode switch, else the system) sets ink, pipe colors and the panel base --panel. The background sets the page gradient,
+   the text sitting on it (--text-color) and --accent. Panels are --panel at 84%, so every background tints them; pills are accent
+   tinted, so both always match the background in use. Space Grotesk display + IBM Plex Sans body, 8/16px radii, pill buttons.
+   Layout: home screen (Play / Profile / Shop tabs) overlays the game. Game: phone = one column; wide screens = board left, controls in a side column.
+   Pipe colors --p0..--p18 are per tone, each >=4.3:1 against the board (checked), dots look like the reference (no letters) unless Settings' color-blind mode adds letters as a non-color cue. */
+:root{
+  --bg:#f7f4ef;--panel:#fffdfa;--border:rgba(60,40,20,.08);--bmed:rgba(60,40,20,.14);
+  --tx:#1c1c1a;--txm:#6a6a66;--green:#2a7a3b;--blue:#3b3fc4;--orange:#c05c00;--accent:#b4621b;--lk:45%;--link0:#8a4f1a;
+  --p0:#c62828;--p1:#1a60b0;--p2:#2a7a3b;--p3:#9a7300;--p4:#c05c00;--p5:#00838f;--p6:#b0247a;--p7:#6b46c1;--p8:#557a00;--p9:#8a5a34;--p10:#d6336c;--p11:#4b5563;--p12:#2b2722;--p13:#1818dc;--p14:#c918d5;--p15:#721830;--p16:#552267;--p17:#971197;--p18:#7c240e;
+  --r:8px;--rl:16px;--col:600px;
+  --nd-sky:#c3dce2;--nd-tx:#14262d;--nd-accent:#175795;--nd-cloud:#fff;--nd-haze:.5; /* Night & Day background, by day */
+  --fs-xs:11px;--fs-sm:13px;--fs-base:15px;--fs-md:17px;--fs-lg:20px;--fs-num:22px; /* type scale: labels, UI, body, dialog title, brand, stat numbers */
+  --t-fast:120ms;--t-med:320ms;--ease-out:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.3,1.6,.5,1); /* motion tokens */
+  --font-body:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-display:'Space Grotesk',var(--font-body);
+  padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1d1d1d;--panel:#232228;--border:rgba(255,255,255,.07);--bmed:rgba(255,255,255,.17);--lk:80%;
+  --nd-sky:#1a1830;--nd-tx:#f0f0f5;--nd-accent:#93b4f7;--nd-cloud:#292649;--nd-haze:.6;--night:1;
+  --tx:#ffffff;--txm:#b1b1b1;--green:#4ec668;--blue:#858bff;--orange:#f5a742;--accent:#cf9f5b;--link0:#cba47b;
+  --p0:#ff6b6b;--p1:#5fa8f5;--p2:#4ec668;--p3:#f5d142;--p4:#f5a742;--p5:#3fd0e0;--p6:#f062c0;--p7:#a98bff;--p8:#b5dc5a;--p9:#c9935f;--p10:#ffadc6;--p11:#9aa3ad;--p12:#f4f1ea;--p13:#3eea3e;--p14:#d445ea;--p15:#9addb1;--p16:#f4e89a;--p17:#c2a0df;--p18:#dc5a86;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1d1d1d;--panel:#232228;--border:rgba(255,255,255,.07);--bmed:rgba(255,255,255,.17);--lk:80%;
+  --nd-sky:#1a1830;--nd-tx:#f0f0f5;--nd-accent:#93b4f7;--nd-cloud:#292649;--nd-haze:.6;--night:1;
+  --tx:#ffffff;--txm:#b1b1b1;--green:#4ec668;--blue:#858bff;--orange:#f5a742;--accent:#cf9f5b;--link0:#cba47b;
+  --p0:#ff6b6b;--p1:#5fa8f5;--p2:#4ec668;--p3:#f5d142;--p4:#f5a742;--p5:#3fd0e0;--p6:#f062c0;--p7:#a98bff;--p8:#b5dc5a;--p9:#c9935f;--p10:#ffadc6;--p11:#9aa3ad;--p12:#f4f1ea;--p13:#3eea3e;--p14:#d445ea;--p15:#9addb1;--p16:#f4e89a;--p17:#c2a0df;--p18:#dc5a86;
+  color-scheme:dark}
+:root{--surface:color-mix(in srgb,var(--panel) 84%,transparent);--s2:color-mix(in srgb,var(--panel) 84%,var(--tx) 8%);--s3:color-mix(in srgb,var(--panel) 76%,var(--tx) 16%)} /* see-through panels */
+/* Backgrounds. Registered so the 3s transitions actually blend the gradient and swing the sun/moon along their arc. */
+@property --bg-gradient-top{syntax:'<color>';inherits:true;initial-value:#0f2027}
+@property --bg-gradient-mid{syntax:'<color>';inherits:true;initial-value:#203a43}
+@property --bg-gradient-bottom{syntax:'<color>';inherits:true;initial-value:#2c5364}
+@property --orbital-rotation{syntax:'<angle>';inherits:true;initial-value:140deg}
+:root{--text-color:#eceff1;--celestial-color:#f5f5f5;--celestial-shadow:rgba(255,255,255,.4)}
+.theme-classic{--bg-gradient-top:var(--bg);--bg-gradient-mid:var(--bg);--bg-gradient-bottom:var(--bg);--text-color:var(--tx)} /* follows the Dark mode switch */
+.theme-classic :is(.lead,.home .eyebrow,#st,footer,.pts-line){color:var(--txm)} /* secondary text, as in the reference */
+body.theme-classic{--link:var(--link0)} /* the reference's softer tan for links and pill borders (dot stays --accent) */
+body.theme-classic{--glow:rgba(0,0,0,.3);--amb:transparent} /* flat board as in the reference: a plain drop shadow, no halo */
+.theme-ocean{--bg-gradient-top:#0b2540;--bg-gradient-mid:#0f4468;--bg-gradient-bottom:#136a8f;--text-color:#e8f4fb;--accent:#4fc3dc}
+.theme-forest{--bg-gradient-top:#0d2418;--bg-gradient-mid:#1a4430;--bg-gradient-bottom:#2f6a45;--text-color:#eaf5ec;--accent:#7fd48a}
+.theme-dunes{--bg-gradient-top:#fbe3bf;--bg-gradient-mid:#f2c189;--bg-gradient-bottom:#e39a5f;--text-color:#3b2412;--accent:#c2552b}
+.theme-sakura{--bg-gradient-top:#fff0f5;--bg-gradient-mid:#f9c9da;--bg-gradient-bottom:#f0a3c0;--text-color:#4a1d2f;--accent:#d64f86}
+.theme-aurora{--bg-gradient-top:#07131f;--bg-gradient-mid:#0e4a45;--bg-gradient-bottom:#3b2a6e;--text-color:#e6fff6;--accent:#5ff2b0}
+.theme-synth{--bg-gradient-top:#1a0533;--bg-gradient-mid:#4a0f63;--bg-gradient-bottom:#8a1f5c;--text-color:#ffe8f4;--accent:#ff5fb8}
+/* Night & Day (Legendary): the Admissions-AI sky, following the Dark mode switch. Overcast cyan with white clouds by day; deep indigo with
+   indigo clouds, yellow stars and a crescent moon by night (--nd-* and --night are set per tone above). Clouds are one shape used as a mask,
+   so --nd-cloud recolors them; two star tiles of mismatched size keep the repeat from showing. */
+.theme-nightday{--bg-gradient-top:var(--nd-sky);--bg-gradient-mid:var(--nd-sky);--bg-gradient-bottom:var(--nd-sky);--text-color:var(--nd-tx);--accent:var(--nd-accent)}
+.layer,body.theme-nightday::before,body.theme-nightday::after{position:fixed;inset:0;z-index:-1;pointer-events:none} /* full-screen, behind everything */
+body.theme-nightday::before,body.theme-nightday::after{content:'';transition:background-color .3s,opacity .3s}
+body.theme-nightday::before{--cl:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='110' viewBox='0 0 300 110'><g fill='%23000'><circle cx='78' cy='62' r='40'/><circle cx='150' cy='50' r='48'/><circle cx='218' cy='66' r='36'/><rect x='38' y='66' width='224' height='36' rx='18'/></g></svg>");
+  background:var(--nd-cloud);opacity:var(--nd-haze);animation:drift 120s ease-in-out infinite alternate;
+  mask:var(--cl) -8vw 14vh/44vw auto no-repeat,var(--cl) 72vw 40vh/38vw auto no-repeat,var(--cl) 26vw 84vh/52vw auto no-repeat}
+body.theme-nightday::after{opacity:var(--night,0);
+  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520' viewBox='0 0 520 520'><g fill='%23ffe6a3'><path opacity='.5' d='M60 35Q60 48 73 48Q60 48 60 61Q60 48 47 48Q60 48 60 35Z'/><path opacity='.4' d='M300 111Q300 120 309 120Q300 120 300 129Q300 120 291 120Q300 120 300 111Z'/><path opacity='.45' d='M180 285Q180 300 195 300Q180 300 180 315Q180 300 165 300Q180 300 180 285Z'/><path opacity='.35' d='M430 242Q430 250 438 250Q430 250 430 258Q430 250 422 250Q430 250 430 242Z'/><path opacity='.38' d='M95 420Q95 430 105 430Q95 430 95 440Q95 430 85 430Q95 430 95 420Z'/><path opacity='.3' d='M390 448Q390 455 397 455Q390 455 390 462Q390 455 383 455Q390 455 390 448Z'/></g></svg>") 0 0/520px 520px,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='730' height='730' viewBox='0 0 730 730'><g fill='%23ffe6a3'><path opacity='.32' d='M150 84Q150 90 156 90Q150 90 150 96Q150 90 144 90Q150 90 150 84Z'/><path opacity='.34' d='M560 373Q560 380 567 380Q560 380 560 387Q560 380 553 380Q560 380 560 373Z'/><path opacity='.28' d='M330 595Q330 600 335 600Q330 600 330 605Q330 600 325 600Q330 600 330 595Z'/><circle opacity='.3' cx='420' cy='60' r='2'/><circle opacity='.24' cx='90' cy='280' r='1.6'/><circle opacity='.28' cx='640' cy='180' r='1.8'/><circle opacity='.22' cx='250' cy='420' r='1.5'/><circle opacity='.3' cx='700' cy='520' r='2'/><circle opacity='.25' cx='60' cy='640' r='1.7'/><circle opacity='.23' cx='480' cy='700' r='1.6'/><circle opacity='.2' cx='200' cy='150' r='1.4'/><circle opacity='.22' cx='600' cy='650' r='1.5'/></g></svg>") 0 0/730px 730px,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170' viewBox='0 0 170 170'><path fill='%23ffe6a3' opacity='.22' d='M112 16a70 70 0 1 0 45 111A61 61 0 0 1 112 16Z'/></svg>") right 5vw top 80px/170px 170px no-repeat}
+@keyframes drift{from{transform:translate3d(-1.5%,0,0)}to{transform:translate3d(1.5%,0,0)}}
+@media (prefers-reduced-motion:reduce){body.theme-nightday::before{animation:none}} /* clouds hold still */
+.theme-sky{--accent:#f5a742} /* Time of day: the gradient comes from the sky classes below (set by app.js; a sky can be pinned in Settings) */
+/* --orbital-rotation: 0 = left horizon, 90deg = overhead, 180deg = right horizon; the moon rides opposite the sun. */
+.sunrise{--bg-gradient-top:#ff7e5f;--bg-gradient-mid:#feb47b;--bg-gradient-bottom:#ffeccc;--text-color:#2c3e50;--celestial-color:#fffcfa;--celestial-shadow:rgba(255,230,200,.6);--orbital-rotation:15deg} /* 5AM-8AM */
+.daytime{--bg-gradient-top:#56ccf2;--bg-gradient-mid:#4ea8de;--bg-gradient-bottom:#2f80ed;--text-color:#fff;--celestial-color:#fffde6;--celestial-shadow:rgba(255,253,230,.8);--orbital-rotation:80deg} /* 8AM-5PM */
+.sunset{--bg-gradient-top:#9442fe;--bg-gradient-mid:#b83b5e;--bg-gradient-bottom:#f08a5d;--text-color:#ffcad4;--celestial-color:#ffeedd;--celestial-shadow:rgba(240,138,93,.6);--orbital-rotation:165deg} /* 5PM-8PM */
+.nighttime{--bg-gradient-top:#050b14;--bg-gradient-mid:#101f32;--bg-gradient-bottom:#1a2a3a;--text-color:#e0e6ed;--celestial-color:#f4f5f7;--celestial-shadow:rgba(255,255,255,.2);--orbital-rotation:260deg} /* 8PM-5AM: sun down, moon up */
+:is(.daytime,.sunset,.theme-photo) :is(header,#st,#solBtn,footer,.home .eyebrow,.pts-line,.lead){text-shadow:0 1px 3px rgba(0,0,0,.35)} /* light text on the pale ends of those skies, and on photos */
+/* Your photo: a fixed layer (cover-fit) under a dark scrim so white text stays readable. Until a photo is chosen it falls back to graphite;
+   app.js then sets --photo-* and .has-photo on <html>: the photo, its band colors (page edges, Safari's bars) and its most vivid color as the accent. */
+.theme-photo{--bg-gradient-top:#1d1d1d;--bg-gradient-mid:#1d1d1d;--bg-gradient-bottom:#1d1d1d;--text-color:#fff;--accent:#cf9f5b}
+.photo{background:center/cover no-repeat}
+.photo::after{content:'';position:absolute;inset:0;background:rgb(0 0 0/var(--scrim,.3))}
+body:not(.theme-photo) .photo,body:not(.theme-sky) .sky{display:none}
+.has-photo .theme-photo{--bg-gradient-top:var(--photo-top);--bg-gradient-mid:var(--photo-mid);--bg-gradient-bottom:var(--photo-bottom);--accent:var(--photo-accent);--scrim:var(--photo-scrim)}
+.has-photo :is(.photo,.pv-bg.theme-photo){background-image:var(--photo-img)}
+.has-photo .pv-bg.theme-photo::before{content:none}
+/* iOS Safari 26 ignores theme-color and tints its status bar and bottom bar from a full-width fixed element at each edge.
+   These strips carry the background's end colors. app.js gives them the body's classes (so they skip its 3s fade and show
+   the final color) and swaps in fresh ones on each change, which makes Safari re-sample. */
+.edge{position:fixed;left:0;right:0;top:0;height:max(6px,env(safe-area-inset-top,0px));background:var(--bg-gradient-top);pointer-events:none;z-index:10}
+#edgeB{top:auto;bottom:0;height:max(6px,env(safe-area-inset-bottom,0px));background:var(--bg-gradient-bottom)}
+.sky i{position:absolute;width:80px;height:80px;margin:-40px;border-radius:50%;background:var(--celestial-color);box-shadow:0 0 40px var(--celestial-shadow);
+  left:calc(50% - 42vw*cos(var(--orbital-rotation)));top:calc(100% - 85vh*sin(var(--orbital-rotation)));transition:background-color 3s ease,box-shadow 3s ease} /* elliptical arc: stays on screen on phones too */
+.sky i+i{left:calc(50% + 42vw*cos(var(--orbital-rotation)));top:calc(100% + 85vh*sin(var(--orbital-rotation)))}
+*{box-sizing:border-box}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{margin:0;background:linear-gradient(180deg,var(--bg-gradient-top) 0%,var(--bg-gradient-mid) 50%,var(--bg-gradient-bottom) 100%) fixed var(--bg-gradient-bottom);color:var(--text-color);
+  /* solid base color = the gradient's bottom: iOS Safari paints the area under its bottom toolbar with it (else black or white) */
+  --glow:color-mix(in srgb,var(--accent) 22%,transparent);--amb:color-mix(in srgb,var(--accent) 26%,transparent);--link:color-mix(in srgb,var(--accent) var(--lk),var(--tx)); /* accent-derived: link = accent text pulled toward ink until readable */
+  font:var(--fs-base)/1.55 var(--font-body);-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-inline:16px;padding-block:8px 12px;
+  touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+  transition:--bg-gradient-top 3s ease-in-out,--bg-gradient-mid 3s ease-in-out,--bg-gradient-bottom 3s ease-in-out,--orbital-rotation 3s cubic-bezier(.4,0,.2,1),color 3s ease-in-out}
+body:is(.theme-classic,.theme-nightday){transition-duration:.3s}
+:root.quick-fade body{transition-duration:.4s} /* Shop background preview: too short for the 3s fade */ /* track the Dark mode switch, so they should feel instant */
+@media (prefers-reduced-motion:reduce){*,::backdrop{animation-duration:.001ms!important;animation-delay:0s!important;transition-duration:.001ms!important}}
+:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:4px}
+[hidden]{display:none!important}
+#game{display:contents} /* wrapper only for inert while home is up; its children stay in body's layout */
+#game[inert]{visibility:hidden} /* the home screen is see-through (background behind it), so hide the waiting board */
+header,.card,#wrap,.bar,footer{width:100%;max-width:var(--col)} /* one shared column edge, board included */
+header,.bar{display:flex;align-items:center;gap:8px}
+.brand{display:flex;align-items:center;gap:8px;margin:0 auto 0 0;font:700 var(--fs-lg)/1.15 var(--font-display);letter-spacing:-.4px}
+.brand svg{color:var(--accent);flex-shrink:0}
+.card,dialog,.tabs,.shape,.level{background:var(--surface);border:.5px solid var(--bmed);border-radius:var(--rl)} /* every panel-like box */
+.card{color:var(--tx);transition:background .2s}
+#hud{align-items:center;flex-wrap:wrap;row-gap:10px;padding:10px 14px}
+.stats{display:flex;gap:18px;font-variant-numeric:tabular-nums}
+.stats div{display:grid;gap:2px}
+.stats b{font-size:var(--fs-xs);font-weight:500;color:var(--txm);text-transform:uppercase;letter-spacing:.08em}
+.stats span{font:700 var(--fs-num)/1 var(--font-display);letter-spacing:-.5px;transform-origin:left center}
+.bump{animation:bump var(--t-med) var(--spring)}
+@keyframes bump{40%{transform:scale(1.2)}}
+#pts,#ptsGain{color:var(--orange)}
+#ptsGain{font:600 var(--fs-sm)/1 var(--font-display)}#ptsGain:empty{display:none} /* points earned on a win, under the total */ /* reward color; 22px bold is large text, so 3:1 is the bar */
+#hintBtn{margin-left:auto}
+#wrap{flex:1;min-height:0;max-height:100vw;width:100%;display:grid;place-items:center;container-type:size} /* no overflow clip: the win pop grows past it.
+  max-height: on tall phones the whole column centers instead of the board floating in a stretched gap */
+/* The board: the largest whole-pixel square that fits #wrap (app.js matches its bitmap to it). Win pop: in the one-column layout up to 1.12x,
+   capped so the spring's ~11% overshoot stays on screen (tan(atan2(a,b)) is a/b as a number); 1.2x in the wide layout. */
+canvas{width:round(down,min(100cqw,100cqh),1px);height:round(down,min(100cqw,100cqh),1px);--pop:min(1.12,1 + (tan(atan2(100vw,min(100cqw,100cqh))) - 1)/1.11);touch-action:none;border-radius:var(--rl);filter:drop-shadow(0 10px 12px var(--glow)) drop-shadow(0 0 36px var(--amb))} /* lift + ambient halo, both follow the board's shape */
+.pop{animation:pop 420ms var(--spring)} /* keep in sync with MS.lift */
+@keyframes pop{45%{transform:scale(var(--pop,1.2));filter:drop-shadow(0 22px 22px var(--glow)) drop-shadow(0 0 36px var(--amb))}}
+#st,#demoSt{flex:1;min-width:0;font-size:var(--fs-sm);line-height:1.35;font-variant-numeric:tabular-nums}
+#st.win{font-weight:600}
+footer{font:600 var(--fs-xs)/1.4 var(--font-body);text-transform:uppercase;letter-spacing:.12em;font-variant-numeric:tabular-nums}
+footer::before{content:'';display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--accent);vertical-align:1px}
+.btn{min-height:44px;padding:0 18px;font:600 var(--fs-sm) var(--font-body);border-radius:999px;cursor:pointer;border:1px solid var(--bmed); /* pills; 44px tap target at every width */
+  background:var(--surface);color:var(--tx);white-space:nowrap;transition:background var(--t-fast),opacity var(--t-fast),transform var(--t-fast) var(--ease-out)}
+.btn:hover{background:var(--s2)}
+.btn:active,.level:active,.shape:active{transform:scale(.96)}
+.btn-primary,.btn-primary:hover{background:color-mix(in srgb,var(--accent) 18%,var(--bg));border-color:color-mix(in srgb,var(--link) 48%,transparent);color:var(--tx)}
+.btn-quiet{background:rgba(0,0,0,.1);color:var(--link)}
+.theme-classic .btn-quiet{color:var(--blue)}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{background:none;border-color:transparent;color:inherit} /* text on the background in the bar */
+dialog .btn-ghost{color:var(--txm)}
+.btn-ghost:hover{background:var(--s2);color:var(--tx)}
+.btn-link,.btn-link:hover{background:none;border-color:transparent;color:var(--link)}
+.btn-sample{background:color-mix(in srgb,var(--accent) 14%,var(--panel));color:var(--link);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.btn-sample:hover{background:color-mix(in srgb,var(--accent) 26%,var(--panel))}
+.btn[aria-disabled="true"]{opacity:.45;cursor:default}
+/* Sun/moon toggle (ported from an animated React toggle): each stroke scales about its own center and draws in late / erases early (framer's pathLength over scale .6-1). */
+.theme-toggle path{transform-box:fill-box;transform-origin:center;stroke-dasharray:1 2;transition:transform .7s var(--ease-out),stroke-dashoffset .4s .3s}
+.theme-toggle[aria-checked="true"] .sun,.theme-toggle[aria-checked="false"] .moon{transform:scale(0);stroke-dashoffset:1;transition:transform .7s var(--ease-out),stroke-dashoffset .3s}
+dialog{margin:auto;width:min(360px,calc(100% - 32px));color:var(--tx);
+  padding:1.5rem 1.5rem 1.25rem;box-shadow:0 24px 48px -24px rgba(0,0,0,.45);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+dialog::backdrop{background:rgba(20,14,8,.45)}
+dialog[open]{animation:rise var(--t-med) var(--ease-out)}           /* popup rises in; closing stays instant (exit faster than enter) */
+dialog[open]::backdrop{animation:fade .32s cubic-bezier(.2,.8,.2,1)} /* literal: ::backdrop can't read custom properties in older Safari */
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.97)}}
+@keyframes fade{from{opacity:0}}
+form{display:grid;gap:14px}
+h2{font:600 var(--fs-md)/1.15 var(--font-display);letter-spacing:-.2px;margin:0}
+.rec-line,.skies small,.opt small,.level :is(.sz,.rec),.prof-sub,.bests small{font-size:var(--fs-sm);color:var(--txm)} /* secondary text */
+.rec-line{margin:0}
+.win-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px} /* solved: wide Next pill with Change level and Home pills under it */
+.win-bar .btn-primary,#diffBtn{grid-column:1/-1}
+.win-bar .btn-primary{min-height:45px;font-size:var(--fs-base)} /* 45px = the reference pill's height */
+.row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+#dlg .row{display:grid;grid-template-columns:1fr 1fr} /* four pills in a 2x2 grid */
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;padding:0} /* round, icon centered (an inline svg sits on the text baseline, ~2px high) */
+/* Settings: sky picker. Each swatch carries its sky's class, so it previews the real gradient. */
+.skies{display:grid;gap:6px;margin:0;padding:0;border:0}
+.skies legend{padding:0}
+.skies label{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:12px;min-height:48px;padding:6px 12px;border:.5px solid var(--bmed);border-radius:var(--r);cursor:pointer}
+.skies label:has(:checked){border-color:var(--link);box-shadow:inset 0 0 0 1px var(--link)}
+.skies:disabled label{opacity:.45;cursor:default}
+.skies input{margin:0;accent-color:var(--link)}
+.skies i{width:28px;height:28px;border-radius:50%;background:linear-gradient(var(--bg-gradient-top),var(--bg-gradient-mid),var(--bg-gradient-bottom))}
+.opt{display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;min-height:48px;cursor:pointer}
+.opt input{width:20px;height:20px;margin:0;accent-color:var(--link)}.opt small{grid-column:2}
+/* Home: Play (pick a shape, then tap a level), Profile (points, hardest-level records) and Shop tabs. Shapes are drawn from the generator's masks. */
+.home{position:fixed;inset:0;z-index:5;overflow-y:auto;touch-action:pan-y;display:flex;flex-direction:column;align-items:center;gap:18px;
+  padding-inline:16px;padding-block:calc(env(safe-area-inset-top,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 24px)}
+.home>*{width:100%;max-width:880px}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:999px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.tabs button{flex:1;min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;background:none;color:var(--txm);font:600 var(--fs-sm) var(--font-body);cursor:pointer;transition:background var(--t-fast),color var(--t-fast)}
+.tabs button[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 18%,var(--bg));color:var(--tx);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--link) 48%,transparent)}
+.tabs svg{flex-shrink:0}
+.tab{display:grid;gap:18px}
+.lead{margin:0;text-align:center;font-size:var(--fs-base)}
+.home-body,.shop{display:grid;gap:24px}
+.eyebrow{font:600 var(--fs-xs)/1.2 var(--font-body);text-transform:uppercase;letter-spacing:.12em;margin:0 0 10px}
+.shapes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.shape{display:grid;justify-items:center;gap:8px;padding:12px 6px 10px;
+  color:var(--txm);font:500 var(--fs-sm) var(--font-body);cursor:pointer;transition:transform var(--t-fast) var(--ease-out),color var(--t-fast)}
+.shape svg{width:100%;max-width:60px;aspect-ratio:1;fill:var(--s3);transition:fill var(--t-med)}
+.shape[aria-pressed="true"]{color:var(--tx);border-color:var(--link);box-shadow:inset 0 0 0 1px var(--link)}
+.shape[aria-pressed="true"] svg{fill:var(--accent)}
+.shape small{font-size:var(--fs-xs);color:var(--link)}.lockwrap{display:grid;width:100%;place-items:center}.lockwrap>*{grid-area:1/1}.shape.locked .lockwrap>svg:first-child{filter:blur(4px);opacity:.5}.shape .lock{width:36%;max-width:32px;aspect-ratio:1;fill:none;color:var(--tx);z-index:1}.shape[aria-disabled="true"]{opacity:.6;cursor:default}
+.levels{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.level{width:100%;min-height:60px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:10px 16px;text-align:left;
+  color:var(--tx);font:inherit;cursor:pointer;transition:background var(--t-fast),transform var(--t-fast) var(--ease-out)}
+.level:hover{background:var(--s2)}
+.level b{font:700 var(--fs-lg)/1 var(--font-display);letter-spacing:-.3px}
+.level .sz,.level .rec{font-variant-numeric:tabular-nums}
+.level .rec{text-align:right;line-height:1.35}
+.flows{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}.flows i{width:6px;height:6px;border-radius:50%}
+.flows i:nth-child(1){background:var(--p0)}.flows i:nth-child(2){background:var(--p1)}.flows i:nth-child(3){background:var(--p2)}.flows i:nth-child(4){background:var(--p3)}.flows i:nth-child(5){background:var(--p4)}.flows i:nth-child(6){background:var(--p5)}.flows i:nth-child(7){background:var(--p6)}.flows i:nth-child(8){background:var(--p7)}.flows i:nth-child(9){background:var(--p8)}.flows i:nth-child(10){background:var(--p9)}.flows i:nth-child(11){background:var(--p10)}.flows i:nth-child(12){background:var(--p11)}.flows i:nth-child(13){background:var(--p12)}.flows i:nth-child(14){background:var(--p13)}.flows i:nth-child(15){background:var(--p14)}.flows i:nth-child(16){background:var(--p15)}.flows i:nth-child(17){background:var(--p16)}.flows i:nth-child(18){background:var(--p17)}.flows i:nth-child(19){background:var(--p18)} /* one swatch per pipe color */ /* the exact colors this level's board uses */
+.pts-line{margin:12px 0 0;font-size:var(--fs-sm)}
+/* Profile */
+.profile{display:grid;gap:18px;padding:18px;justify-self:center}
+.prof-head{display:flex;align-items:center;gap:14px}
+.avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:color-mix(in srgb,var(--accent) 26%,var(--panel));color:var(--link)}
+#profPts{color:var(--orange)}
+.prof-sub{margin:0}
+#toShop{margin-left:auto}
+.profile .eyebrow{color:var(--txm)}
+.bests{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.bests li{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:12px;min-height:48px;padding:6px 12px;border-radius:var(--r);background:var(--s2)}
+.bests svg{width:28px;fill:var(--accent)}
+.bests b{font:700 var(--fs-md)/1 var(--font-display);font-variant-numeric:tabular-nums}
+.bests small{display:block;font-variant-numeric:tabular-nums}
+/* Shop: one tile per cosmetic, tier badge colored by rarity. Previews reuse the real background classes. */
+.wallet{margin:0;text-align:center;font-size:var(--fs-sm)}
+.wallet b{font:700 var(--fs-lg) var(--font-display);color:var(--orange)}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+/* Preview: a small ? at each tile's top right (the icon works too) opens a demo board on the game screen. */
+.peek-btn{position:absolute;top:8px;right:8px;width:22px;height:22px;padding:0;display:grid;place-items:center;border-radius:50%;border:1px solid var(--bmed);
+  background:var(--s2);color:var(--txm);font:600 var(--fs-xs)/1 var(--font-body);cursor:pointer;transition:color var(--t-fast),border-color var(--t-fast)}
+.peek-btn::after{content:'';position:absolute;inset:-11px} /* 44px tap target around the tiny circle */
+.peek-btn:hover{color:var(--tx);border-color:var(--link)}
+.pv[data-pv]{cursor:pointer}
+#game:not(.demo) #demoBar,#game.demo :is(.bar:has(#st),#winBar,#best),#game.demo:not(.demo-bg) #hud,.demo-bg #againBtn{display:none!important}
+/* demo board: its line and the way back; a background preview also keeps the HUD, so the panels show over it */
+.item{position:relative;display:grid;justify-items:center;align-content:start;gap:8px;padding:16px 10px 10px;text-align:center}
+.item:has(.t-Legendary){border-color:color-mix(in srgb,#f59e0b 65%,transparent)}
+.item:has(.t-Mythic){border-color:color-mix(in srgb,#e0457b 70%,transparent)}
+.photo-btn{min-height:32px;margin-top:-4px;font-size:var(--fs-xs)}
+.item b{font:600 var(--fs-base)/1.2 var(--font-display)}
+.item .btn{width:100%;padding:0 10px}
+.item .in-use{opacity:1;background:none;border-color:var(--link);color:var(--link)} /* equipped: reads as selected, not disabled */
+.item:has(.in-use){box-shadow:inset 0 0 0 1px var(--link)}
+.tier{font:600 var(--fs-xs)/1 var(--font-body);text-transform:uppercase;letter-spacing:.08em;padding:4px 8px;border-radius:999px;
+  color:color-mix(in srgb,var(--t) 65%,var(--tx));background:color-mix(in srgb,var(--t) 16%,transparent)}
+.t-Free{--t:var(--txm)}.t-Common{--t:#7d8794}.t-Rare{--t:#3b82f6}.t-Epic{--t:#a855f7}.t-Legendary{--t:#f59e0b}.t-Mythic{--t:#e0457b}
+.pv{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;--d:var(--p1)}
+.pv-bg{background:linear-gradient(var(--bg-gradient-top),var(--bg-gradient-mid),var(--bg-gradient-bottom));box-shadow:inset 0 0 0 1px var(--bmed)}
+.pv-bg.theme-photo{background:var(--s2) center/cover}.pv-bg.theme-photo::before{content:'+';font:300 30px/1 var(--font-body);color:var(--txm)} /* no photo yet */
+.pv-bg.theme-classic{background:linear-gradient(135deg,#f7f4ef 50%,#1d1d1d 50%)} /* both tones */
+.pv-bg.theme-nightday{background:linear-gradient(135deg,#c3dce2 50%,#1a1830 50%)}
+.pv-dot{background:var(--s2)}
+.pv-dot::before{content:'';width:34px;height:34px;border-radius:50%;background:linear-gradient(#fff6,#fff0 45%,#0002),var(--d)}
+.dot-flat::before{background:var(--d)}
+.dot-ring::before{background:none;box-shadow:inset 0 0 0 5px var(--d)}
+.dot-gem::before{border-radius:4px;transform:rotate(45deg) scale(.82)}
+.dot-star::before{width:40px;height:40px;border-radius:0;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.pv-trail{background:var(--s2)}
+.pv-trail::before{content:'';width:40px;height:12px;border-radius:6px;background:linear-gradient(#fff4,#fff0 70%),var(--d)} /* Tube */
+.trail-thin::before{height:5px;background:var(--d)}
+.trail-beads::before{height:11px;border-radius:0;background:radial-gradient(circle,var(--d) 0 4.5px,#0000 5px) 0 50%/13px 11px repeat-x}
+.trail-neon::before{height:7px;background:linear-gradient(#fff,#fff) 50%/100% 2px no-repeat,var(--d);box-shadow:0 0 10px var(--d)}
+.trail-flow::before{height:11px;background:repeating-linear-gradient(90deg,var(--d) 0 8px,color-mix(in srgb,var(--d) 40%,transparent) 8px 16px);animation:march 1s linear infinite}
+@keyframes march{to{background-position:16px 0}}
+.win-wave{background:repeating-linear-gradient(135deg,var(--p0) 0 8px,var(--p1) 8px 16px,var(--p2) 16px 24px,var(--p3) 24px 32px)}
+.win-ripple{background:repeating-radial-gradient(circle,var(--accent) 0 3px,var(--s2) 3px 8px)}
+.win-confetti{background:radial-gradient(circle at 26% 30%,var(--p0) 0 4px,#0000 5px),radial-gradient(circle at 70% 24%,var(--p1) 0 4px,#0000 5px),radial-gradient(circle at 46% 58%,var(--p3) 0 4px,#0000 5px),
+  radial-gradient(circle at 76% 70%,var(--p6) 0 4px,#0000 5px),radial-gradient(circle at 30% 78%,var(--p2) 0 4px,#0000 5px),var(--s2)}
+.win-rainbow{background:conic-gradient(#ff5e5e,#ffd24d,#5ee07a,#4dc9ff,#8a7dff,#ff6ec7,#ff5e5e)}
+.win-fireworks{background:radial-gradient(circle,var(--s2) 0 6px,#0000 7px),repeating-conic-gradient(var(--p3) 0 9deg,var(--p0) 9deg 18deg,#0000 18deg 36deg),var(--s2)}
+@media (min-width:760px){
+  .home{padding-block:calc(env(safe-area-inset-top,0px) + 24px) 40px;gap:28px}
+  .home-body{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:start}
+  .shapes{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .shape{padding:20px 12px 16px}.shape svg{max-width:112px}
+  .tabs{max-width:520px}
+}
+/* Wide screens (tablet/phone landscape, desktop): the board takes the left, controls stack in a side column.
+   Board and brand share a top edge at every size. */
+@media (min-width:700px) and (min-aspect-ratio:5/4){
+  body{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,340px);grid-template-rows:auto auto auto auto 1fr;
+    column-gap:clamp(24px,4vw,56px);align-items:start;padding-inline:clamp(16px,4vw,48px);padding-block:clamp(12px,4vh,40px)}
+  #wrap{grid-column:1;grid-row:1/-1;height:100%;max-width:none;max-height:none;place-items:start center}
+  canvas{--pop:1.2}
+  #game>header,#hud,.bar,footer{grid-column:2;max-width:none} /* game panels only: home cards sit in their own grids */
+}
